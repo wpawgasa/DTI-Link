@@ -144,12 +144,13 @@ public class TestTDL extends javax.swing.JFrame {
                     .addComponent(jComboBox4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 10, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jComboBox5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel5)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(jComboBox6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel6)))
+                        .addComponent(jLabel6))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jComboBox5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel5)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(connectBtn))
         );
@@ -184,8 +185,19 @@ public class TestTDL extends javax.swing.JFrame {
 
     private void connectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectBtnActionPerformed
         // TODO add your handling code here:
-        conn.setCommPort(jComboBox1.getSelectedItem());
-        conn.connect(portListener, inputStream);
+        conn.setCommPort(jComboBox1.getSelectedItem().toString());
+        conn.setBitRate(Integer.parseInt(jComboBox2.getSelectedItem().toString()));
+        conn.setDataBits(Integer.parseInt(jComboBox3.getSelectedItem().toString()));
+        conn.setParity(jComboBox4.getSelectedItem().toString());
+        conn.setStopBits(jComboBox5.getSelectedItem().toString());
+        conn.setFlowControl(jComboBox6.getSelectedItem().toString());
+        conn.setPortId();
+
+        conn.connect();
+        inputStream = conn.getSerialInputStream();
+        conn.setPortListener(new portListener());
+        t = new Thread(new connThread());
+
         connectBtn.setEnabled(false);
     }//GEN-LAST:event_connectBtnActionPerformed
 
@@ -217,13 +229,10 @@ public class TestTDL extends javax.swing.JFrame {
         //</editor-fold>
 
         //EmbeddedDB db = new EmbeddedDB();
-        TestTDL test = new TestTDL();
-        
-        test.t = new Thread(new connThread());
-        test.t.start();
-        
+        final TestTDL test = new TestTDL();
+
         test.conn = new TDLConnection();
-        
+
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -232,6 +241,7 @@ public class TestTDL extends javax.swing.JFrame {
         });
     }
     private TDLConnection conn;
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton connectBtn;
     private static javax.swing.JTextArea displayArea;
@@ -252,22 +262,23 @@ public class TestTDL extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
     private static String timestamp;
     private static InputStream inputStream;
-    private SerialPortEventListener portListener;
+    //private SerialPortEventListener portListener;
     Thread t;
-    public static class connThread implements Runnable, SerialPortEventListener {
-    
-        public connThread() {
 
-        }
+    public class connThread implements Runnable {
 
         @Override
         public void run() {
             try {
                 Thread.sleep(100);
+                //displayArea.append(timestamp + "\n");
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         }
+    }
+
+    public class portListener implements SerialPortEventListener {
 
         @Override
         public void serialEvent(SerialPortEvent event) {
@@ -302,7 +313,6 @@ public class TestTDL extends javax.swing.JFrame {
                     break;
             }
         }
-
     }
 
 }

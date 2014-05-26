@@ -15,14 +15,14 @@ import java.util.logging.Logger;
  *
  * @author wichai.p
  */
-public class TDLConnection {
+public class TDLConnection  {
 
     private CommPortIdentifier portId;
 
     private InputStream inputStream;
     private OutputStream outputStream;
     private SerialPort serialPort;
-    //Thread readThread;
+    Thread readThread;
     private String TimeStamp;
 
     private String commPort;
@@ -39,7 +39,7 @@ public class TDLConnection {
 
     }
 
-    public void connect(SerialPortEventListener portListener, InputStream inputStream) {
+    public void connect() {
         try {
 
             this.TimeStamp = new java.util.Date().toString();
@@ -48,15 +48,8 @@ public class TDLConnection {
 
         } catch (PortInUseException e) {
         }
-        try {
-            inputStream = serialPort.getInputStream();
-        } catch (IOException e) {
-        }
-        try {
-            serialPort.addEventListener(portListener);
-        } catch (TooManyListenersException ex) {
-            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
+        
         serialPort.notifyOnDataAvailable(true);
         try {
             int databits = getSerialPortDataBits(this.dataBits);
@@ -72,7 +65,8 @@ public class TDLConnection {
 
         } catch (UnsupportedCommOperationException e) {
         }
-
+        //inputStream = getSerialInputStream();
+        //setPortListener(this);
         //readThread = new Thread(this);
         //readThread.start();
     }
@@ -81,6 +75,22 @@ public class TDLConnection {
 
     }
 
+    public InputStream getSerialInputStream() {
+        InputStream is = null;
+        try {
+            is = serialPort.getInputStream();
+        } catch (IOException e) {
+        }
+        return is;
+    }
+    
+    public void setPortListener(SerialPortEventListener portListener) {
+        try {
+            serialPort.addEventListener(portListener);
+        } catch (TooManyListenersException ex) {
+            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     public String getCommPort() {
         return commPort;
     }
@@ -176,6 +186,7 @@ public class TDLConnection {
 //            break;
 //        }
 //    }
+    
     public int getSerialPortDataBits(int bits) {
         int value = 8;
         switch (bits) {
