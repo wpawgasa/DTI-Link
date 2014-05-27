@@ -229,11 +229,9 @@ public class TestTDL extends javax.swing.JFrame {
         //</editor-fold>
 
         //EmbeddedDB db = new EmbeddedDB();
-<<<<<<< HEAD
-        TestTDL test = new TestTDL();
-=======
+
         final TestTDL test = new TestTDL();
->>>>>>> cee31981aad4acfb509f7a79c928e3db183bdec0
+
 
         test.conn = new TDLConnection();
 
