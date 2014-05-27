@@ -184,8 +184,19 @@ public class TestTDL extends javax.swing.JFrame {
 
     private void connectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectBtnActionPerformed
         // TODO add your handling code here:
-        conn.setCommPort(jComboBox1.getSelectedItem());
-        conn.connect(portListener, inputStream);
+        conn.setCommPort(jComboBox1.getSelectedItem().toString());
+        conn.setBitRate(Integer.parseInt(jComboBox2.getSelectedItem().toString()));
+        conn.setDataBits(Integer.parseInt(jComboBox3.getSelectedItem().toString()));
+        conn.setParity(jComboBox4.getSelectedItem().toString());
+        conn.setStopBits(jComboBox5.getSelectedItem().toString());
+        conn.setFlowControl(jComboBox6.getSelectedItem().toString());
+        conn.setPortId();
+
+        conn.connect();
+        inputStream = conn.getSerialInputStream();
+        conn.setPortListener(new portListener());
+        t = new Thread(new connThread());
+
         connectBtn.setEnabled(false);
     }//GEN-LAST:event_connectBtnActionPerformed
 
@@ -218,12 +229,9 @@ public class TestTDL extends javax.swing.JFrame {
 
         //EmbeddedDB db = new EmbeddedDB();
         TestTDL test = new TestTDL();
-        
-        test.t = new Thread(new connThread());
-        test.t.start();
-        
+
         test.conn = new TDLConnection();
-        
+
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -232,6 +240,7 @@ public class TestTDL extends javax.swing.JFrame {
         });
     }
     private TDLConnection conn;
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton connectBtn;
     private static javax.swing.JTextArea displayArea;
@@ -252,22 +261,23 @@ public class TestTDL extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
     private static String timestamp;
     private static InputStream inputStream;
-    private SerialPortEventListener portListener;
+    //private SerialPortEventListener portListener;
     Thread t;
-    public static class connThread implements Runnable, SerialPortEventListener {
-    
-        public connThread() {
 
-        }
+    public class connThread implements Runnable {
 
         @Override
         public void run() {
             try {
                 Thread.sleep(100);
+                //displayArea.append(timestamp + "\n");
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         }
+    }
+
+    public class portListener implements SerialPortEventListener {
 
         @Override
         public void serialEvent(SerialPortEvent event) {
@@ -302,7 +312,6 @@ public class TestTDL extends javax.swing.JFrame {
                     break;
             }
         }
-
     }
 
 }
