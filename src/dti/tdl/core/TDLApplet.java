@@ -23,7 +23,7 @@ public class TDLApplet extends Applet {
         db = new EmbeddedDB();
     }
     public Boolean connectPort(String commPort, int bitRate, int dataBits, 
-            int stopBits, String flowControl, String parity) {
+            String stopBits, String flowControl, String parity) {
         
         conn = new TDLConnection();
         conn.setCommPort(commPort);

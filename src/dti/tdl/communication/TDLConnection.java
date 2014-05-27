@@ -39,7 +39,8 @@ public class TDLConnection  {
 
     }
 
-    public void connect() {
+    public boolean connect() {
+        
         try {
 
             this.TimeStamp = new java.util.Date().toString();
@@ -47,6 +48,8 @@ public class TDLConnection  {
             System.out.println(TimeStamp + ": " + this.portId.getName() + " opened for communicate with Radio");
 
         } catch (PortInUseException e) {
+            e.printStackTrace();
+            return false;
         }
         
         
@@ -64,24 +67,40 @@ public class TDLConnection  {
             serialPort.setRTS(false);
 
         } catch (UnsupportedCommOperationException e) {
+            e.printStackTrace();
+            return false;
         }
         //inputStream = getSerialInputStream();
         //setPortListener(this);
         //readThread = new Thread(this);
         //readThread.start();
+        return true;
     }
 
     public void disconnect() {
-
+        this.serialPort.removeEventListener();
+        this.serialPort.close();
+        
     }
 
     public InputStream getSerialInputStream() {
         InputStream is = null;
         try {
             is = serialPort.getInputStream();
+            
         } catch (IOException e) {
         }
         return is;
+    }
+    
+    public OutputStream getSerialOutputStream() {
+        OutputStream os = null;
+        try {
+            os = serialPort.getOutputStream();
+            
+        } catch (IOException e) {
+        }
+        return os;
     }
     
     public void setPortListener(SerialPortEventListener portListener) {
