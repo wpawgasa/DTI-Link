@@ -131,9 +131,19 @@ public class TestTDL extends javax.swing.JFrame {
 
         stopCmdBtn.setText("Stop Command Mode");
         stopCmdBtn.setEnabled(false);
+        stopCmdBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stopCmdBtnActionPerformed(evt);
+            }
+        });
 
         sendCmdBtn.setText("Send Command");
         sendCmdBtn.setEnabled(false);
+        sendCmdBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                sendCmdBtnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -304,6 +314,7 @@ public class TestTDL extends javax.swing.JFrame {
         String msg = msgText.getText();
         try {
             outputStream.write(msg.getBytes());
+            outputStream.flush();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -311,7 +322,47 @@ public class TestTDL extends javax.swing.JFrame {
 
     private void startCmdBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startCmdBtnActionPerformed
         // TODO add your handling code here:
+        String msg = "+++";
+        try {
+            outputStream.write(msg.getBytes());
+            outputStream.flush();
+            //sendMsgBtn.setEnabled(false);
+            startCmdBtn.setEnabled(false);
+            stopCmdBtn.setEnabled(true);
+            sendCmdBtn.setEnabled(true);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }//GEN-LAST:event_startCmdBtnActionPerformed
+
+    private void stopCmdBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stopCmdBtnActionPerformed
+        // TODO add your handling code here:
+        String msg = "ATCN";
+        try {
+            
+            outputStream.write(msg.getBytes());
+            outputStream.write((byte)13);
+            outputStream.flush();
+            //sendMsgBtn.setEnabled(false);
+            startCmdBtn.setEnabled(true);
+            stopCmdBtn.setEnabled(false);
+            sendCmdBtn.setEnabled(false);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }//GEN-LAST:event_stopCmdBtnActionPerformed
+
+    private void sendCmdBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendCmdBtnActionPerformed
+        // TODO add your handling code here:
+        String msg = commandText.getText();
+        try {
+            outputStream.write(msg.getBytes());
+            outputStream.write((byte)13);
+            outputStream.flush();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }//GEN-LAST:event_sendCmdBtnActionPerformed
 
     /**
      * @param args the command line arguments
