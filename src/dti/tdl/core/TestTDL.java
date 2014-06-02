@@ -7,11 +7,14 @@ package dti.tdl.core;
 
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.db.EmbeddedDB;
+import dti.tdl.messaging.TDLMessage;
+import dti.tdl.messaging.TDLMessageHandler;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.sql.Timestamp;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -336,9 +339,13 @@ public class TestTDL extends javax.swing.JFrame {
         inputStream = conn.getSerialInputStream();
         outputStream = conn.getSerialOutputStream();
         conn.setPortListener(new portListener());
-        t = new Thread(new connThread());
-        t.start();
-
+        txT = new TransmitThread();
+        
+        txT.start();
+        
+        rxT = new ReceiveThread();
+        
+        rxT.start();
     }//GEN-LAST:event_connectBtnActionPerformed
 
     private void disconnectBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disconnectBtnActionPerformed
@@ -350,17 +357,22 @@ public class TestTDL extends javax.swing.JFrame {
         startCmdBtn.setEnabled(false);
         stopCmdBtn.setEnabled(false);
         sendCmdBtn.setEnabled(false);
+        txT.kill();
+        rxT.kill();
+        
     }//GEN-LAST:event_disconnectBtnActionPerformed
 
     private void sendMsgBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMsgBtnActionPerformed
         // TODO add your handling code here:
-        String msg = msgText.getText();
-        try {
-            outputStream.write(msg.getBytes());
-            outputStream.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        
+        TDLMessage msg = new TDLMessage(null, null, null, "text", msgText.getText());
+        TDLMessageHandler.formatTextMessage(msg);
+//        try {
+//            outputStream.write(msg.getBytes());
+//            outputStream.flush();
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
     }//GEN-LAST:event_sendMsgBtnActionPerformed
 
     private void startCmdBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startCmdBtnActionPerformed
@@ -484,6 +496,9 @@ public class TestTDL extends javax.swing.JFrame {
     private OutputStream outputStream;
     //private SerialPortEventListener portListener;
     Thread t;
+    TransmitThread txT;
+    ReceiveThread rxT;
+    
 
     public class connThread implements Runnable {
 
@@ -495,6 +510,65 @@ public class TestTDL extends javax.swing.JFrame {
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
+        }
+    }
+    
+    public class TransmitThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        @Override
+        public void run() {
+            try {
+                while(isThreadAlive) {
+                    if(TDLMessageHandler.txStack.size()>0) {
+                        String txFrame = TDLMessageHandler.txStack.removeFirst();
+                        try {
+                            //String txMsg = new String(txFrame.getBytes("UTF-8"), "UTF-8");
+                            //System.out.println(txMsg);
+                            //TDLMessageHandler.deformatMessage(txFrame.getBytes("ISO-8859-1"));
+    //                        try { 
+                            outputStream.write(txFrame.getBytes("ISO-8859-1"));
+                            outputStream.flush();
+                                //outputStream.flush();
+                        } catch (Exception ex) {
+                            Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                            
+                            
+//                        } catch (IOException ex) {
+//                            ex.printStackTrace();
+//                        }
+                    }
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        public void kill() {
+            isThreadAlive = false;
+        }
+    }
+    
+    public class ReceiveThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        @Override
+        public void run() {
+            try {
+                while(isThreadAlive) {
+                    if(TDLMessageHandler.rxStack.size()>0) {
+                        TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
+                        userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
+                    }
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        public void kill() {
+            isThreadAlive = false;
         }
     }
 
@@ -516,17 +590,18 @@ public class TestTDL extends javax.swing.JFrame {
                 case SerialPortEvent.DATA_AVAILABLE:
                     StringBuilder readBuffer = new StringBuilder();
                     int c;
+                    byte[] b = {(byte) 1};
                     try {
-                        while ((c = inputStream.read()) != 10) {
-                            if (c != 13) {
-                                readBuffer.append((char) c);
+                        while ((b[0] = (byte) inputStream.read()) != (byte)10) {
+                            if (b[0] != (byte)13) {
+                                readBuffer.append(new String(b,"ISO-8859-1"));
                             }
                         }
                         String scannedInput = readBuffer.toString();
                         timestamp = new java.util.Date().toString();
                         System.out.println(timestamp + ": input received:" + scannedInput);
                         displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
-
+                        TDLMessageHandler.deformatMessage(scannedInput.getBytes("ISO-8859-1"));
                     } catch (IOException e) {
                     }
 
