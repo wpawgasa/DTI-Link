@@ -601,7 +601,9 @@ public class TestTDL extends javax.swing.JFrame {
                         timestamp = new java.util.Date().toString();
                         System.out.println(timestamp + ": input received:" + scannedInput);
                         displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
-                        TDLMessageHandler.deformatMessage(scannedInput.getBytes("ISO-8859-1"));
+                        if(scannedInput.charAt(0)== (char)1) {
+                            TDLMessageHandler.deformatMessage(scannedInput.getBytes("ISO-8859-1"));
+                        }
                     } catch (IOException e) {
                     }
 
