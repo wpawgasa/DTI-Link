@@ -7,6 +7,7 @@ package dti.tdl.core;
 
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.db.EmbeddedDB;
+import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
 import gnu.io.SerialPortEvent;
@@ -62,7 +63,7 @@ public class TestTDL extends javax.swing.JFrame {
         stopCmdBtn = new javax.swing.JButton();
         commandText = new javax.swing.JTextField();
         sendCmdBtn = new javax.swing.JButton();
-        jTextField1 = new javax.swing.JTextField();
+        currentPosition = new javax.swing.JTextField();
         jLabel7 = new javax.swing.JLabel();
         jTabbedPane1 = new javax.swing.JTabbedPane();
         jScrollPane1 = new javax.swing.JScrollPane();
@@ -199,7 +200,7 @@ public class TestTDL extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel7)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(currentPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 199, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(startCmdBtn)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -219,7 +220,7 @@ public class TestTDL extends javax.swing.JFrame {
                     .addComponent(jLabel1)
                     .addComponent(jLabel2)
                     .addComponent(jComboBox2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(currentPosition, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel7))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -467,6 +468,7 @@ public class TestTDL extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField commandText;
     private javax.swing.JButton connectBtn;
+    private javax.swing.JTextField currentPosition;
     private javax.swing.JButton disconnectBtn;
     private static javax.swing.JTextArea displayArea;
     private javax.swing.JComboBox jComboBox1;
@@ -488,7 +490,6 @@ public class TestTDL extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField msgText;
     private javax.swing.JButton sendCmdBtn;
     private javax.swing.JButton sendMsgBtn;
@@ -607,7 +608,8 @@ public class TestTDL extends javax.swing.JFrame {
                         System.out.println(timestamp + ": input received:" + scannedInput);
                         displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
                         if(scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
-                            
+                            PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
+                            currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                         }
                         if(scannedInput.charAt(0)== (char)1) {
                             TDLMessageHandler.deformatMessage(scannedInput.getBytes("ISO-8859-1"));

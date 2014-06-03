@@ -10,7 +10,7 @@ package dti.tdl.messaging;
  *
  * @author wichai.p
  */
-public class Position {
+public class PPLI {
     
     public String posId;
     public double posLat;
@@ -18,8 +18,10 @@ public class Position {
     public double speed;
     public double trueCourse;
     public double magVariation;
+    public String posTime;
+    public String posDate;
     
-    public Position() {
+    public PPLI() {
         
     }
 
@@ -70,6 +72,23 @@ public class Position {
     public void setMagVariation(double magVariation) {
         this.magVariation = magVariation;
     }
+
+    public String getPosTime() {
+        return posTime;
+    }
+
+    public void setPosTime(String posTime) {
+        this.posTime = posTime;
+    }
+
+    public String getPosDate() {
+        return posDate;
+    }
+
+    public void setPosDate(String posDate) {
+        this.posDate = posDate;
+    }
+    
     
     
     

@@ -238,11 +238,41 @@ public class TDLMessageHandler {
 
     }
 
-    public static Position decodeOwnPosition(String posStr) {
-        Position pos = new Position();
+    public static PPLI decodeOwnPosition(String posStr) {
+        PPLI pos = new PPLI();
+        //pos.posId = "0000";
         String[] posValues = posStr.split(",");
+        String posTime = posValues[1];
+        String posDate = posValues[9];
+        double posLat = degreeToDecimal(posValues[3]);
+        double posLon = degreeToDecimal(posValues[5]);
+        double posSpeed = Double.parseDouble(posValues[7]);
+        double posTC = Double.parseDouble(posValues[8]);
+        double posMV = Double.parseDouble(posValues[9]);
         
+        pos.setPosId("0000");
+        pos.setPosDate(posDate);
+        pos.setPosTime(posTime);
+        pos.setPosLat(posLat);
+        pos.setPosLon(posLon);
+        pos.setTrueCourse(posTC);
+        pos.setSpeed(posSpeed);
+        pos.setMagVariation(posMV);
         return pos;
     }
 
+    public static double degreeToDecimal(String degreeStr) {
+        String posMinStr = degreeStr.substring(degreeStr.length()-5,2);
+        String posSecondStr = degreeStr.substring(degreeStr.length()-2,2);
+        String posDegreeStr = degreeStr.substring(0,degreeStr.length()-5);
+        double posMin = Double.parseDouble(posMinStr);
+        double posSecond = Double.parseDouble(posSecondStr);
+        posSecond = posMin*60 + posSecond;
+        posSecondStr = String.valueOf(posSecond);
+        int decimal = posDegreeStr.length();
+        posSecond = posSecond/decimal;
+        double posDegree = Double.parseDouble(posDegreeStr);
+        return posDegree+posSecond;
+        
+    }
 }
