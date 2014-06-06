@@ -39,11 +39,11 @@ public class TDLMessageHandler {
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
         byte[] msg = null;
-        try {
-            msg = message.getMsg().getBytes("ISO-8859-1");
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+            msg = message.getMsg().getBytes();
+//        } catch (UnsupportedEncodingException ex) {
+//            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         int numBlk = 1;
 
         if (msg.length > 89) {
@@ -83,49 +83,54 @@ public class TDLMessageHandler {
             msgIdx = 89 * i;
             frame = new byte[start.length + from.length + to.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length + end.length];
             System.arraycopy(start, 0, frame, 0, start.length);
-            System.out.println(start.length);
+//            System.out.println(start.length);
             System.arraycopy(from, 0, frame, start.length, from.length);
-            System.out.println(start.length + from.length);
+//            System.out.println(start.length + from.length);
             
             System.arraycopy(to, 0, frame, start.length + from.length, to.length);
-            for (int k = 0; k < frame.length; k++) {
-                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
-            }
-            System.out.println(to.length);
-            System.out.println(start.length + from.length + to.length);
+//            for (int k = 0; k < frame.length; k++) {
+//                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
+//            }
+//            System.out.println(to.length);
+//            System.out.println(start.length + from.length + to.length);
             System.arraycopy(checksumBytes, 0, frame, start.length + from.length + to.length, checksumBytes.length);
-            System.out.println(checksumBytes.length);
-            for (int k = 0; k < checksumBytes.length; k++) {
-                System.out.println("Long Byte " + k + ": " + (int) checksumBytes[k]);
-            }
-            for (int k = 0; k < frame.length; k++) {
-                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
-            }
+//            System.out.println(checksumBytes.length);
+//            for (int k = 0; k < checksumBytes.length; k++) {
+//                System.out.println("Long Byte " + k + ": " + (int) checksumBytes[k]);
+//            }
+//            for (int k = 0; k < frame.length; k++) {
+//                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
+//            }
             System.arraycopy(startMsg, 0, frame, start.length + from.length + to.length + checksumBytes.length, startMsg.length);
             System.arraycopy(Arrays.copyOfRange(msg, msgIdx, msgIdx + msgBlkLength), 0, frame, start.length + from.length + to.length + checksumBytes.length + startMsg.length, msgBlkLength);
             System.arraycopy(endMsg, 0, frame, start.length + from.length + to.length + checksumBytes.length + startMsg.length + msgBlkLength, endMsg.length);
             System.arraycopy(end, 0, frame, start.length + from.length + to.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length, end.length);
-            for (int k = 0; k < frame.length; k++) {
-                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
-            }
+//            for (int k = 0; k < frame.length; k++) {
+//                System.out.println("Partial Tx frame Byte " + k + ": " + (int) frame[k]);
+//            }
             String txMsg = null;
             StringBuilder builder = new StringBuilder();
-            try {
-//                for (int j = 0; j < frame.length; j++) {
-//                    builder.append(new String(to))
-//                }
-                txMsg = new String(frame, "ISO-8859-1");
-            } catch (Exception ex) {
-                Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
+//            try {
+                for (int j = 0; j < frame.length; j++) {
+                    if(j<frame.length-1) {
+                    builder.append((int)frame[j]+",");
+                    } else {
+                        builder.append((int)frame[j]);
+                    }
+                }
+                txMsg = builder.toString();
+                //txMsg = new String(frame);
+//            } catch (Exception ex) {
+//                Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
+//            }
             txStack.add(txMsg);
             System.out.println(txMsg);
-            try {
-                System.out.println(txMsg.getBytes("ISO-8859-1").length);
-            } catch (UnsupportedEncodingException ex) {
-                Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            System.out.println(frame.length);
+//            try {
+//                System.out.println(txMsg.getBytes().length);
+//            } catch (UnsupportedEncodingException ex) {
+//                Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//            System.out.println(frame.length);
             for (int k = 0; k < frame.length; k++) {
                 System.out.println("Tx frame Byte " + k + ": " + (int) frame[k]);
             }
@@ -139,13 +144,13 @@ public class TDLMessageHandler {
         int endIdx = -1;
         int startMsgIdx = -1;
         int endMsgIdx = -1;
-        try {
-            String rxMsgT = new String(bytes, "ISO-8859-1");
-            System.out.println(rxMsgT);
-            System.out.println(size);
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+            String rxMsgT = new String(bytes);
+//            System.out.println(rxMsgT);
+//            System.out.println(size);
+//        } catch (UnsupportedEncodingException ex) {
+//            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         for (int k = 0; k < bytes.length; k++) {
             System.out.println("Rx frame Byte " + k + ": " + (int) bytes[k]);
         }
@@ -179,11 +184,10 @@ public class TDLMessageHandler {
         //int checksumSize = startMsgIdx - startIdx+9;
         byte[] checksum = Arrays.copyOfRange(bytes, startIdx + 5, startMsgIdx);
         byte[] msg = Arrays.copyOfRange(bytes, startMsgIdx + 1, endMsgIdx);
-        try {
-            String rxMsg = new String(msg, "ISO-8859-1");
+        //try {
+            String rxMsg = new String(msg);
             System.out.println(rxMsg);
-            System.out.println(CRC32Checksum("Hello"));
-
+            
             long newChecksum = CRC32Checksum(rxMsg);
             System.out.println(startIdx);
             System.out.println(startMsgIdx);
@@ -202,11 +206,21 @@ public class TDLMessageHandler {
 
             TDLMessage rxMsgObj = new TDLMessage(null, null, null, null, rxMsg);
             rxStack.add(rxMsgObj);
-        } catch (UnsupportedEncodingException ex) {
-        }
+//        } catch (UnsupportedEncodingException ex) {
+//        }
 
     }
 
+    public static byte[] getBytesFromQueue() {
+        String txBytesStr = txStack.removeFirst();
+        String[] txBytesStrArray = txBytesStr.split(",");
+        byte[] txBytes = new byte[txBytesStrArray.length];
+        for (int i = 0; i < txBytesStrArray.length; i++) {
+            int byteInt = Integer.parseInt(txBytesStrArray[i]);
+            txBytes[i] = (byte) byteInt;
+        }
+        return txBytes;
+    }
     public static byte[] hexStringToByteArray(String s) {
         if (s == null || s == "") {
             s = "0000";
@@ -224,11 +238,11 @@ public class TDLMessageHandler {
         long checksum = 0;
         // get bytes from string
         byte[] bytes = null;
-        try {
-            bytes = input.getBytes("ISO-8859-1");
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        //try {
+            bytes = input.getBytes();
+//        } catch (UnsupportedEncodingException ex) {
+//            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         Checksum check = new CRC32();
         // update the current checksum with the specified array of bytes
         check.update(bytes, 0, bytes.length);

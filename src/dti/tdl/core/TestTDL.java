@@ -526,18 +526,19 @@ public class TestTDL extends javax.swing.JFrame {
             try {
                 while(isThreadAlive) {
                     if(TDLMessageHandler.txStack.size()>0) {
-                        String txFrame = TDLMessageHandler.txStack.removeFirst();
-                        try {
+                        //String txFrame = TDLMessageHandler.txStack.removeFirst();
+                        byte[] txFrame = TDLMessageHandler.getBytesFromQueue();
+//                        try {
                             //String txMsg = new String(txFrame.getBytes("UTF-8"), "UTF-8");
                             //System.out.println(txMsg);
-                            //TDLMessageHandler.deformatMessage(txFrame.getBytes("ISO-8859-1"));
+                            TDLMessageHandler.deformatMessage(txFrame);
     //                        try { 
-                            outputStream.write(txFrame.getBytes("ISO-8859-1"));
-                            outputStream.flush();
+                           // outputStream.write(txFrame.getBytes());
+                           // outputStream.flush();
                                 //outputStream.flush();
-                        } catch (Exception ex) {
-                            Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+//                        } catch (Exception ex) {
+//                            Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
+//                        }
                             
                             
 //                        } catch (IOException ex) {
@@ -600,7 +601,7 @@ public class TestTDL extends javax.swing.JFrame {
                     try {
                         while ((b[0] = (byte) inputStream.read()) != (byte)10) {
                             if (b[0] != (byte)13) {
-                                readBuffer.append(new String(b,"ISO-8859-1"));
+                                readBuffer.append(new String(b));
                             }
                         }
                         String scannedInput = readBuffer.toString();
@@ -612,7 +613,7 @@ public class TestTDL extends javax.swing.JFrame {
                             currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                         }
                         if(scannedInput.charAt(0)== (char)1) {
-                            TDLMessageHandler.deformatMessage(scannedInput.getBytes("ISO-8859-1"));
+                            TDLMessageHandler.deformatMessage(scannedInput.getBytes());
                         }
                     } catch (IOException e) {
                     }
