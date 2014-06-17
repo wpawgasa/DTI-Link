@@ -257,6 +257,7 @@ public class TDLConnection  {
         return value;
     }
 
+    
 //    public static void main(String[] args) {
 //        try {
 //          portId = CommPortIdentifier.getPortIdentifier("COM1");

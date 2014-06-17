@@ -5,6 +5,8 @@
  */
 package dti.tdl.db;
 
+import dti.tdl.communication.ConnectionProfile;
+import dti.tdl.communication.TDLConnection;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -12,6 +14,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -35,6 +39,15 @@ public class EmbeddedDB {
             if (!rs.next()) {
                 createActionTable();
             }
+            rs = dbmd.getTables(null, "APP", "PROFILES", null);
+            if (!rs.next()) {
+                createActionTable();
+            }
+            rs = dbmd.getTables(null, "APP", "SERIALCONFIG", null);
+            if (!rs.next()) {
+                createActionTable();
+            }
+            
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
         } catch (SQLException ex) {
@@ -44,7 +57,7 @@ public class EmbeddedDB {
 
     public void createErrorTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE ERRORS"
+            this.conn.createStatement().executeQuery("CREATE TABLE ERRORS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",ERROR_TYPE CHAR(1),ERROR_DESC LONGVARCHAR,LOG_TIME TIMESTAMP)");
             
@@ -55,7 +68,7 @@ public class EmbeddedDB {
     
     public void createActionTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE ACTIONS"
+            this.conn.createStatement().executeQuery("CREATE TABLE ACTIONS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",ACTION_DESC LONGVARCHAR,LOG_TIME TIMESTAMP)");
         } catch (SQLException ex) {
@@ -63,8 +76,62 @@ public class EmbeddedDB {
         }
     }
     
+    public void createSerialConfigTable() {
+        try {
+            this.conn.createStatement().executeQuery("CREATE TABLE SERIALCONFIG "
+                    + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
+                    + ",PROFILE_ID INTEGER NOT NULL,COMMPORT VARCHAR NOT NULL, BITRATE INTEGER NOT NULL"
+                    + ", DATABITS INTEGER NOT NULL, STOPBITS VARCHAR NOT NULL, PARITY VARCHAR NOT NULL, FLOWCONTROL NOT NULL)");
+            insertSerialConfig(1, "COM1", 38400, 8, "1", "None", "None");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     public void createProfileTable() {
-        
+        try {
+            this.conn.createStatement().executeQuery("CREATE TABLE PROFILES "
+                    + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
+                    + ",PROFILE_NAME VARCHAR NOT NULL,TIME_CREATED TIMESTAMP)");
+            
+            insertProfile("Default");
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void insertProfile(String profileName) {
+        try {
+            String sql = "INSERT INTO PROFILES (PROFILE_NAME,TIME_CREATED) VALUES (?,?)";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            java.util.Date date= new java.util.Date();
+	 
+            stm.setString(1, profileName);
+            stm.setTimestamp(2, new Timestamp(date.getTime()));
+            stm.executeUpdate();
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public void insertSerialConfig(int profileId, String commport, int bitrate, int databits, String stopbits, String parity, String flowControl) {
+        try {
+            String sql = "INSERT INTO SERIALCONFIG (PROFILE_ID,COMMPORT,BITRATE,DATABITS,STOPBITS,PARITY,FLOWCONTROL) VALUES (?,?,?,?,?,?,?)";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            
+            stm.setInt(1, profileId);
+            stm.setString(2, commport);
+            stm.setInt(3, bitrate);
+            stm.setInt(4, databits);
+            stm.setString(5, stopbits);
+            stm.setString(6, parity);
+            stm.setString(7, flowControl);
+            stm.executeUpdate();
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
     
     public void insertError(String errCode,String errDesc) {
@@ -98,23 +165,52 @@ public class EmbeddedDB {
         }
     }
     
-    public void insertProfile() {
+    public ConnectionProfile selectProfiles(int profileId) {
+        ConnectionProfile profile = new ConnectionProfile();
+        try {
+            String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
+                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID WHERE SERIALCONFIG.PROFILE_ID=?";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            stm.setInt(1, profileId);
+            ResultSet rs = stm.executeQuery();
+            
+            while(rs.next()) {
+                
+                String profileName = rs.getString("PROFILE_NAME");
+                //String commport = rs.getString("COMMPORT");
+                profile.setProfileName(profileName);
+                profile.setProfileId(profileId);
+            }
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return profile;
     }
     
-    public void updateProfile() {
-        
+    public List<ConnectionProfile> listProfiles() {
+        List<ConnectionProfile> profiles = new ArrayList<ConnectionProfile>();
+        try {
+            String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
+                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            ResultSet rs = stm.executeQuery();
+            
+            while(rs.next()) {
+                int profileId = rs.getInt("PROFILE_ID");
+                String profileName = rs.getString("PROFILE_NAME");
+                //String commport = rs.getString("COMMPORT");
+                ConnectionProfile profile = new ConnectionProfile();
+                profile.setProfileName(profileName);
+                profile.setProfileId(profileId);
+                profiles.add(profile);
+            }
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return profiles;
     }
     
-    public void deleteProfile() {
-        
-    }
     
-    public void clearErrorLog() {
-        
-    }
-    
-    public void clearActionLog() {
-        
-    }
-
 }
