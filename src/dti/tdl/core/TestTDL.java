@@ -71,7 +71,6 @@ public class TestTDL extends javax.swing.JFrame {
         jPanel2 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         userMsgTxtArea = new javax.swing.JTextArea();
-        jPanel3 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -282,19 +281,6 @@ public class TestTDL extends javax.swing.JFrame {
 
         jTabbedPane1.addTab("User Input Messages", jPanel2);
 
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 681, Short.MAX_VALUE)
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 326, Short.MAX_VALUE)
-        );
-
-        jTabbedPane1.addTab("Map", jPanel3);
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -470,7 +456,7 @@ public class TestTDL extends javax.swing.JFrame {
     private javax.swing.JButton connectBtn;
     private javax.swing.JTextField currentPosition;
     private javax.swing.JButton disconnectBtn;
-    private static javax.swing.JTextArea displayArea;
+    private javax.swing.JTextArea displayArea;
     private javax.swing.JComboBox jComboBox1;
     private javax.swing.JComboBox jComboBox2;
     private javax.swing.JComboBox jComboBox3;
@@ -486,7 +472,6 @@ public class TestTDL extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTabbedPane jTabbedPane1;
@@ -608,8 +593,11 @@ public class TestTDL extends javax.swing.JFrame {
                         timestamp = new java.util.Date().toString();
                         System.out.println(timestamp + ": input received:" + scannedInput);
                         displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
+                        
                         if(scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
+                            System.out.println(scannedInput.substring(0, 6));
                             PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
+                            System.out.println("ppli: "+ppli.getPosLat()+", "+ppli.getPosLon());
                             currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                         }
                         if(scannedInput.charAt(0)== (char)1) {

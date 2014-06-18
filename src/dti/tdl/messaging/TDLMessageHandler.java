@@ -258,8 +258,11 @@ public class TDLMessageHandler {
         String[] posValues = posStr.split(",");
         String posTime = posValues[1];
         String posDate = posValues[9];
-        double posLat = degreeToDecimal(posValues[3]);
-        double posLon = degreeToDecimal(posValues[5]);
+        
+//        double posLat = degreeToDecimal(posValues[3]);
+//        double posLon = degreeToDecimal(posValues[5]);
+        double posLat = Double.parseDouble(posValues[3]);
+        double posLon = Double.parseDouble(posValues[5]);
         double posSpeed = Double.parseDouble(posValues[7]);
         double posTC = Double.parseDouble(posValues[8]);
         double posMV = Double.parseDouble(posValues[9]);
