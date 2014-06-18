@@ -22,10 +22,31 @@ public class TDLInterface {
     public TDLInterface() {
         db = new EmbeddedDB();
         conn = new TDLConnection();
+        
+        setupServer();
     }
     
-    public List<ConnectionProfile> listProfiles() {
-        return db.listProfiles();
+    public static void main(String[] args) {
+        TDLInterface inf = new TDLInterface();
+                
+    }
+    
+    public void setupServer() {
+        try {
+        new TDLServer() {
+            @Override
+            public void processRequest(String reqMsg) {
+                String req = reqMsg;
+                switch(req) {
+                    case "test":
+                       this.setReturnMsg("Test message from server");
+                    break;
+                }
+            }
+        };
+        } catch(Exception e) {
+            
+        }
     }
     
     
