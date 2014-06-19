@@ -20,8 +20,8 @@ public class TDLInterface {
     public EmbeddedDB db;
     public TDLConnection conn;
     public TDLInterface() {
-        db = new EmbeddedDB();
-        conn = new TDLConnection();
+        //db = new EmbeddedDB();
+        //conn = new TDLConnection();
         
         setupServer();
     }
@@ -32,8 +32,9 @@ public class TDLInterface {
     }
     
     public void setupServer() {
+        System.out.println("....");
         try {
-        new TDLServer() {
+        (new TDLServer() {
             @Override
             public void processRequest(String reqMsg) {
                 String req = reqMsg;
@@ -43,7 +44,7 @@ public class TDLInterface {
                     break;
                 }
             }
-        };
+        }).start();
         } catch(Exception e) {
             
         }

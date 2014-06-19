@@ -7,9 +7,11 @@
 package dti.tdl.core;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -23,14 +25,25 @@ public class TDLServer extends Thread {
     private String returnMsg;
 
     public TDLServer() throws IOException {
-        this.serverSocket = new ServerSocket(9889);
+        this.serverSocket = new ServerSocket(9880);
         this.serverSocket.setSoTimeout(100);
+        System.out.println("Server is running");
+//        try {    
+//            BufferedWriter log = new BufferedWriter(new OutputStreamWriter(System.out));
+//
+//            log.write("Server is started");
+//            log.flush();
+//          }
+//          catch (Exception e) {
+//            e.printStackTrace();
+//          }
     }
     
     @Override
     public void run() {
         while(true) {
             try {
+                System.out.println("Waiting...");
                 this.clientSocket = this.serverSocket.accept();
                 Thread thread = new Thread() {
                     @Override

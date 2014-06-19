@@ -41,11 +41,11 @@ public class EmbeddedDB {
             }
             rs = dbmd.getTables(null, "APP", "PROFILES", null);
             if (!rs.next()) {
-                createActionTable();
+                createProfileTable();
             }
             rs = dbmd.getTables(null, "APP", "SERIALCONFIG", null);
             if (!rs.next()) {
-                createActionTable();
+                createSerialConfigTable();
             }
             
         } catch (ClassNotFoundException ex) {
@@ -57,9 +57,9 @@ public class EmbeddedDB {
 
     public void createErrorTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE ERRORS "
+            this.conn.createStatement().executeUpdate("CREATE TABLE ERRORS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-                    + ",ERROR_TYPE CHAR(1),ERROR_DESC LONGVARCHAR,LOG_TIME TIMESTAMP)");
+                    + ",ERROR_TYPE CHAR(1),ERROR_DESC LONG VARCHAR,LOG_TIME TIMESTAMP)");
             
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -68,9 +68,9 @@ public class EmbeddedDB {
     
     public void createActionTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE ACTIONS "
+            this.conn.createStatement().executeUpdate("CREATE TABLE ACTIONS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-                    + ",ACTION_DESC LONGVARCHAR,LOG_TIME TIMESTAMP)");
+                    + ",ACTION_DESC LONG VARCHAR,LOG_TIME TIMESTAMP)");
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -78,10 +78,10 @@ public class EmbeddedDB {
     
     public void createSerialConfigTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE SERIALCONFIG "
+            this.conn.createStatement().executeUpdate("CREATE TABLE SERIALCONFIG "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-                    + ",PROFILE_ID INTEGER NOT NULL,COMMPORT VARCHAR NOT NULL, BITRATE INTEGER NOT NULL"
-                    + ", DATABITS INTEGER NOT NULL, STOPBITS VARCHAR NOT NULL, PARITY VARCHAR NOT NULL, FLOWCONTROL NOT NULL)");
+                    + ",PROFILE_ID INTEGER NOT NULL,COMMPORT VARCHAR(10), BITRATE INTEGER NOT NULL"
+                    + ", DATABITS INTEGER NOT NULL, STOPBITS VARCHAR(5), PARITY VARCHAR(20), FLOWCONTROL VARCHAR(20))");
             insertSerialConfig(1, "COM1", 38400, 8, "1", "None", "None");
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -90,9 +90,9 @@ public class EmbeddedDB {
     
     public void createProfileTable() {
         try {
-            this.conn.createStatement().executeQuery("CREATE TABLE PROFILES "
+            this.conn.createStatement().executeUpdate("CREATE TABLE PROFILES "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
-                    + ",PROFILE_NAME VARCHAR NOT NULL,TIME_CREATED TIMESTAMP)");
+                    + ",PROFILE_NAME VARCHAR(50),TIME_CREATED TIMESTAMP)");
             
             insertProfile("Default");
         } catch (SQLException ex) {
