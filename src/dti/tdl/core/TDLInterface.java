@@ -34,17 +34,19 @@ public class TDLInterface {
     public void setupServer() {
         System.out.println("....");
         try {
-        (new TDLServer() {
-            @Override
-            public void processRequest(String reqMsg) {
-                String req = reqMsg;
-                switch(req) {
-                    case "test":
-                       this.setReturnMsg("Test message from server");
-                    break;
-                }
-            }
-        }).start();
+//        (new TDLServer() {
+//            @Override
+//            public void processRequest(String reqMsg) {
+//                String req = reqMsg;
+//                switch(req) {
+//                    case "test":
+//                       this.setReturnMsg("Test message from server");
+//                    break;
+//                }
+//            }
+//        }).start();
+           TDLServer tdlserver = new TDLServer();
+           tdlserver.start();
         } catch(Exception e) {
             
         }
