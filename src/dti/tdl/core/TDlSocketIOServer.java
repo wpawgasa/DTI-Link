@@ -11,7 +11,7 @@ import com.corundumstudio.socketio.Configuration;
 import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.DataListener;
-import dti.tdl.messaging.UIControlMessage;
+import dti.tdl.messaging.UIReqMessage;
 import java.io.IOException;
 
 /**
@@ -49,9 +49,9 @@ public class TDlSocketIOServer extends Thread {
 
     public void setupListeners() {
         //final SocketIONamespace controlnamespace = server.addNamespace("/controlMessages");
-        server.addJsonObjectListener(UIControlMessage.class, new DataListener<UIControlMessage>() {
+        server.addJsonObjectListener(UIReqMessage.class, new DataListener<UIReqMessage>() {
             @Override
-            public void onData(SocketIOClient client, UIControlMessage data, AckRequest ackRequest) {
+            public void onData(SocketIOClient client, UIReqMessage data, AckRequest ackRequest) {
                 // broadcast messages to all clients
                 server.getBroadcastOperations().sendJsonObject(data);
             }

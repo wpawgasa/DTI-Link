@@ -11,7 +11,7 @@ import com.corundumstudio.socketio.SocketIOClient;
 import com.corundumstudio.socketio.SocketIONamespace;
 import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.listener.DataListener;
-import dti.tdl.messaging.UIControlMessage;
+import dti.tdl.messaging.UIReqMessage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
@@ -66,10 +66,10 @@ public class TDLServer extends Thread {
                             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                             reqMsg = reader.readLine();
                             System.out.println(reqMsg);
-                            //TDLServer.this.processRequest(reqMsg);
-
+                            TDLServer.this.processRequest(reqMsg);
+                            System.out.println(TDLServer.this.getReturnMsg());
                             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                            out.writeUTF("Server response: "+reqMsg);
+                            out.writeUTF(TDLServer.this.getReturnMsg());
                             out.close();
                         } catch (IOException e) {
 
