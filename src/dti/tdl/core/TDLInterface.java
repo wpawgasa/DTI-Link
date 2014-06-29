@@ -46,6 +46,7 @@ public class TDLInterface {
 //            }
 //        }).start();
            TDLServer tdlserver = new TDLServer();
+           //TDlSocketIOServer tdlserver = new TDlSocketIOServer();
            tdlserver.start();
         } catch(Exception e) {
             
