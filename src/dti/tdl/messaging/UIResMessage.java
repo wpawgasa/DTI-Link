@@ -6,6 +6,10 @@
 
 package dti.tdl.messaging;
 
+import dti.tdl.communication.ConnectionProfile;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author Administrator
@@ -13,8 +17,10 @@ package dti.tdl.messaging;
 public class UIResMessage {
     public String msg_name;
     public String msg_params;
+    public String msg_err;
     public ServerStatus serverStatus;
-
+    public List<ConnectionProfile> conn_profiles = new ArrayList<ConnectionProfile>();
+    
     public UIResMessage() {
     }
 
@@ -41,6 +47,27 @@ public class UIResMessage {
     public void setServerStatus(ServerStatus serverStatus) {
         this.serverStatus = serverStatus;
     }
+
+    public String getMsg_err() {
+        return msg_err;
+    }
+
+    public void setMsg_err(String msg_err) {
+        this.msg_err = msg_err;
+    }
+
+    public List<ConnectionProfile> getConn_profiles() {
+        return conn_profiles;
+    }
+
+    public void setConn_profiles(List<ConnectionProfile> conn_profiles) {
+        this.conn_profiles = conn_profiles;
+    }
+
+    
+    
+    
+    
     
     
 
@@ -66,5 +93,6 @@ public class UIResMessage {
        
    }
     
+  
     
 }

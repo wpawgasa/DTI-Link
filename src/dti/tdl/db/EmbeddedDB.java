@@ -208,6 +208,7 @@ public class EmbeddedDB {
             
         } catch (SQLException ex) {
             ex.printStackTrace();
+            return null;
         }
         return profiles;
     }
