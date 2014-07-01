@@ -182,6 +182,10 @@ public class EmbeddedDB {
                 profile.setProfileId(rs.getInt("PROFILE_ID"));
                 profile.setComm_port(rs.getString("COMMPORT"));
                 profile.setBit_rates(rs.getInt("BITRATE"));
+                profile.setData_bits(rs.getInt("DATABITS"));
+                profile.setParity(rs.getString("PARITY"));
+                profile.setStop_bits(rs.getString("STOPBITS"));
+                profile.setFlowcontrol(rs.getString("FLOWCONTROL"));
             }
             
         } catch (SQLException ex) {
