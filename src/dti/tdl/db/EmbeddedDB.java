@@ -165,7 +165,7 @@ public class EmbeddedDB {
         }
     }
     
-    public ConnectionProfile selectProfiles(int profileId) {
+    public ConnectionProfile getProfile(int profileId) {
         ConnectionProfile profile = new ConnectionProfile();
         try {
             String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
@@ -179,7 +179,9 @@ public class EmbeddedDB {
                 String profileName = rs.getString("PROFILE_NAME");
                 //String commport = rs.getString("COMMPORT");
                 profile.setProfileName(profileName);
-                profile.setProfileId(profileId);
+                profile.setProfileId(rs.getInt("PROFILE_ID"));
+                profile.setComm_port(rs.getString("COMMPORT"));
+                profile.setBit_rates(rs.getInt("BITRATE"));
             }
             
         } catch (SQLException ex) {
@@ -212,6 +214,8 @@ public class EmbeddedDB {
         }
         return profiles;
     }
+    
+    
     
     
 }

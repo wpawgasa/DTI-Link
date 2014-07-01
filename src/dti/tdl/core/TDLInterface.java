@@ -70,6 +70,17 @@ public class TDLInterface {
 
                                 this.setReturnMsg(mapper.writeValueAsString(ret));
                                 break;
+                            case "get profile":
+                                ret.setMsg_name("response profile");
+                                ConnectionProfile req_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                ConnectionProfile res_profile = db.getProfile(req_profile.getProfileId());
+                                
+                                ret.getConn_profiles().add(res_profile);
+                                
+                                String retMsg = mapper.writeValueAsString(ret);
+
+                                this.setReturnMsg(retMsg);
+                                break;    
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
