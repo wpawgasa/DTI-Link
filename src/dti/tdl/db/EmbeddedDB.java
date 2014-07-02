@@ -134,6 +134,26 @@ public class EmbeddedDB {
         }
     }
     
+    public void updateSerialConfig(int profileId, String commport, int bitrate, int databits, String stopbits, String parity, String flowControl) {
+        try {
+            String sql = "UPDATE SERIALCONFIG SET COMMPORT=?,BITRATE=?,DATABITS=?,STOPBITS=?,"
+                    + "PARITY=?,FLOWCONTROL=? WHERE PROFILE_ID=?";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            
+            stm.setInt(7, profileId);
+            stm.setString(1, commport);
+            stm.setInt(2, bitrate);
+            stm.setInt(3, databits);
+            stm.setString(4, stopbits);
+            stm.setString(5, parity);
+            stm.setString(6, flowControl);
+            stm.executeUpdate();
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
     public void insertError(String errCode,String errDesc) {
         try {
             String sql = "INSERT INTO ERRORS (ERROR_TYPE,ERROR_DESC,LOG_TIME) VALUES (?,?,?)";

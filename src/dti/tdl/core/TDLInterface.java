@@ -92,7 +92,15 @@ public class TDLInterface {
                                     
                                 }
                                 this.setReturnMsg(mapper.writeValueAsString(ret));
-                                break;                    
+                                break;
+                            case "update profile":
+                                ret.setMsg_name("response update profile");
+                                ConnectionProfile update_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                db.updateSerialConfig(update_profile.getProfileId(), update_profile.getComm_port(), update_profile.getBit_rates()
+                                            , update_profile.getData_bits(), update_profile.getStop_bits(), update_profile.getParity(), update_profile.getFlowcontrol());
+                                
+                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                break;    
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
