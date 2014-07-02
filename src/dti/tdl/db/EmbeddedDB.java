@@ -194,6 +194,52 @@ public class EmbeddedDB {
         return profile;
     }
     
+    public int getMaxProfileId() {
+        int maxId = 0;
+        try {
+            String sql = "SELECT MAX(ID) AS MAX_ID FROM PROFILES";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            ResultSet rs = stm.executeQuery();
+            
+            while(rs.next()) {
+                
+                maxId = rs.getInt("MAX_ID");
+                
+            }
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return maxId;
+    }
+    
+    public ConnectionProfile getProfileByName(String profileName) {
+        ConnectionProfile profile = new ConnectionProfile();
+        try {
+            String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
+                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID WHERE SERIALCONFIG.PROFILE_ID=?";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            stm.setString(1, profileName);
+            ResultSet rs = stm.executeQuery();
+            
+            while(rs.next()) {
+                
+                profile.setProfileName(profileName);
+                profile.setProfileId(rs.getInt("PROFILE_ID"));
+                profile.setComm_port(rs.getString("COMMPORT"));
+                profile.setBit_rates(rs.getInt("BITRATE"));
+                profile.setData_bits(rs.getInt("DATABITS"));
+                profile.setParity(rs.getString("PARITY"));
+                profile.setStop_bits(rs.getString("STOPBITS"));
+                profile.setFlowcontrol(rs.getString("FLOWCONTROL"));
+            }
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return profile;
+    }
+    
     public List<ConnectionProfile> listProfiles() {
         List<ConnectionProfile> profiles = new ArrayList<ConnectionProfile>();
         try {

@@ -77,10 +77,22 @@ public class TDLInterface {
                                 
                                 ret.getConn_profiles().add(res_profile);
                                 
-                                String retMsg = mapper.writeValueAsString(ret);
-
-                                this.setReturnMsg(retMsg);
-                                break;    
+                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                break;
+                            case "add new profile":
+                                ret.setMsg_name("response update profile");
+                                ConnectionProfile new_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                if(db.getProfileByName(new_profile.getProfileName()).getProfileId()!=0) {
+                                    ret.setMsg_err(new_profile.getProfileName()+" already exists");
+                                } else {
+                                    db.insertProfile(new_profile.getProfileName());
+                                    int new_profile_id = db.getMaxProfileId();
+                                    db.insertSerialConfig(new_profile_id, new_profile.getComm_port(), new_profile.getBit_rates()
+                                            , new_profile.getData_bits(), new_profile.getStop_bits(), new_profile.getParity(), new_profile.getFlowcontrol());
+                                    
+                                }
+                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                break;                    
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
