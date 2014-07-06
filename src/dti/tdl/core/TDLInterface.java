@@ -27,7 +27,7 @@ public class TDLInterface {
 
     public TDLInterface() {
         db = new EmbeddedDB();
-        //conn = new TDLConnection();
+        conn = new TDLConnection();
 
         setupServer();
     }
@@ -100,7 +100,23 @@ public class TDLInterface {
                                             , update_profile.getData_bits(), update_profile.getStop_bits(), update_profile.getParity(), update_profile.getFlowcontrol());
                                 
                                 this.setReturnMsg(mapper.writeValueAsString(ret));
-                                break;    
+                                break;
+                            case "connect":
+                                ret.setMsg_name("response connect");
+                                ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                conn.setCommPort(conn_profile.getComm_port());
+                                conn.setBitRate(conn_profile.getBit_rates());
+                                conn.setDataBits(conn_profile.getData_bits());
+                                conn.setParity(conn_profile.getParity());
+                                conn.setStopBits(conn_profile.getStop_bits());
+                                conn.setFlowControl(conn_profile.getFlowcontrol());
+                                conn.setPortId();
+                                
+                                if(conn.connect()) {
+                                    
+                                }
+                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                break;      
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
