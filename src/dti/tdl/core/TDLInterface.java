@@ -112,8 +112,8 @@ public class TDLInterface {
                                 conn.setFlowControl(conn_profile.getFlowcontrol());
                                 conn.setPortId();
                                 
-                                if(conn.connect()) {
-                                    
+                                if(!conn.connect()) {
+                                    ret.setMsg_err("Cannot connect to serial interface");
                                 }
                                 this.setReturnMsg(mapper.writeValueAsString(ret));
                                 break;      
