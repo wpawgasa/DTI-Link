@@ -1,11 +1,11 @@
 ----------------------------------------------------------------
-Mon Jul 07 23:18:53 ICT 2014:
-Booting Derby version The Apache Software Foundation - Apache Derby - 10.10.1.3 - (1557168): instance a816c00e-0147-119e-ea00-000008093f88 
-on database directory C:\Users\Administrator\Documents\GitHub\DTI-Link\tdldb with class loader sun.misc.Launcher$AppClassLoader@7ea987ac 
-Loaded from file:/C:/Users/Administrator/Documents/GitHub/DTI-Link/lib/JAVADB_DRIVER_LABEL/derby.jar
+Tue Jul 08 17:33:00 ICT 2014:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.10.1.3 - (1557168): instance a816c00e-0147-1588-9ad6-000002076b10 
+on database directory C:\Users\wichai.p\Documents\NetBeansProjects\DTI Link\tdldb with class loader sun.misc.Launcher$AppClassLoader@7ea987ac 
+Loaded from file:/C:/Users/wichai.p/Documents/NetBeansProjects/DTI%20Link/lib/JAVADB_DRIVER_LABEL/derby.jar
 java.vendor=Oracle Corporation
 java.runtime.version=1.8.0_05-b13
-user.dir=C:\Users\Administrator\Documents\GitHub\DTI-Link
+user.dir=C:\Users\wichai.p\Documents\NetBeansProjects\DTI Link
 os.name=Windows 7
 os.arch=amd64
 os.version=6.1
