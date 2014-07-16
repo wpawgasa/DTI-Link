@@ -9,9 +9,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.db.EmbeddedDB;
+import dti.tdl.messaging.PPLI;
+import dti.tdl.messaging.TDLMessage;
+import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.UIReqMessage;
 import dti.tdl.messaging.UIResMessage;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,7 +31,10 @@ public class TDLInterface {
 
     public EmbeddedDB db;
     public TDLConnection conn;
-
+    private String timestamp;
+    private InputStream inputStream;
+    private OutputStream outputStream;
+    
     public TDLInterface() {
         db = new EmbeddedDB();
         conn = new TDLConnection();
@@ -128,6 +138,108 @@ public class TDLInterface {
             tdlserver.start();
         } catch (Exception e) {
 
+        }
+    }
+    
+    public class TransmitThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        @Override
+        public void run() {
+            try {
+                while(isThreadAlive) {
+                    if(TDLMessageHandler.txStack.size()>0) {
+                        //String txFrame = TDLMessageHandler.txStack.removeFirst();
+                        byte[] txFrame = TDLMessageHandler.getBytesFromQueue();
+
+                        try { 
+                            outputStream.write(txFrame);
+                            outputStream.flush();
+                                
+                        } catch (Exception ex) {
+                            Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                            
+                            
+                        
+                    }
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        public void kill() {
+            isThreadAlive = false;
+        }
+    }
+    
+    public class ReceiveThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        @Override
+        public void run() {
+            try {
+                while(isThreadAlive) {
+                    if(TDLMessageHandler.rxStack.size()>0) {
+                        TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
+                        //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
+                    }
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        public void kill() {
+            isThreadAlive = false;
+        }
+    }
+
+    public class portListener implements SerialPortEventListener {
+
+        @Override
+        public void serialEvent(SerialPortEvent event) {
+            switch (event.getEventType()) {
+                case SerialPortEvent.BI:
+                case SerialPortEvent.OE:
+                case SerialPortEvent.FE:
+                case SerialPortEvent.PE:
+                case SerialPortEvent.CD:
+                case SerialPortEvent.CTS:
+                case SerialPortEvent.DSR:
+                case SerialPortEvent.RI:
+                case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
+                    break;
+                case SerialPortEvent.DATA_AVAILABLE:
+                    StringBuilder readBuffer = new StringBuilder();
+                    int c;
+                    byte[] b = {(byte) 1};
+                    try {
+                        while ((b[0] = (byte) inputStream.read()) != (byte)10) {
+                            if (b[0] != (byte)13) {
+                                readBuffer.append(new String(b));
+                            }
+                        }
+                        String scannedInput = readBuffer.toString();
+                        timestamp = new java.util.Date().toString();
+                        System.out.println(timestamp + ": input received:" + scannedInput);
+                        //displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
+                        
+                        if(scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
+                            System.out.println(scannedInput.substring(0, 6));
+                            PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
+                            System.out.println("own position: "+ppli.getPosLat()+", "+ppli.getPosLon());
+                            //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
+                        }
+                        if(scannedInput.charAt(0)== (char)1) {
+                            TDLMessageHandler.deformatMessage(scannedInput.getBytes());
+                        }
+                    } catch (IOException e) {
+                    }
+
+                    break;
+            }
         }
     }
 

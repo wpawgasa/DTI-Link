@@ -9,13 +9,14 @@ package dti.tdl.messaging;
  * @author Administrator
  */
 public class TDLMessage {
+    public String profileId;
     public String fromId;
     public String toId;
     public String msgId;
-    public String msgType;
+    public byte msgType;
     public String msg;
 
-    public TDLMessage(String fromId, String toId, String msgId, String msgType, String msg) {
+    public TDLMessage(String fromId, String toId, String msgId, byte msgType, String msg) {
         this.fromId = fromId;
         this.toId = toId;
         this.msgId = msgId;
@@ -35,13 +36,18 @@ public class TDLMessage {
         return msgId;
     }
 
-    public String getMsgType() {
+    public byte getMsgType() {
         return msgType;
     }
 
     public String getMsg() {
         return msg;
     }
+
+    public String getProfileId() {
+        return profileId;
+    }
+    
     
     
 }

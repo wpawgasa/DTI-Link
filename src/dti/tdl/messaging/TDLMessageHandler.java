@@ -25,17 +25,18 @@ public class TDLMessageHandler {
     public final static LinkedList<String> txStack = new LinkedList<String>();
     public final static LinkedList<TDLMessage> rxStack = new LinkedList<TDLMessage>();
 
-    public static void formatTextMessage(TDLMessage message) {
+    public static void formatMessage(TDLMessage message) {
         //use 9600 bps slot time = 100 ms
         //max frame size = 100 bytes
-        //header+tailer = 11 bytes
-        //max message size = 89 bytes
+        //header+tailer = 16 bytes
+        //max message size = 84 bytes
 
         byte[] start = {(byte) 1};
         byte[] startMsg = {(byte) 2};
         byte[] endMsg = {(byte) 3};
         byte[] end = {(byte) 4};
-
+        byte[] pid = message.getProfileId().getBytes(); //4 bytes profile id
+        byte[] msgType = {message.getMsgType()}; // 1 byte message type
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
         byte[] msg = null;
@@ -46,9 +47,9 @@ public class TDLMessageHandler {
 //        }
         int numBlk = 1;
 
-        if (msg.length > 89) {
-            numBlk = msg.length / 89;
-            if (msg.length % 89 > 0) {
+        if (msg.length > 84) {
+            numBlk = msg.length / 84;
+            if (msg.length % 84 > 0) {
                 numBlk++;
             }
 
@@ -73,14 +74,14 @@ public class TDLMessageHandler {
         int msgLength = msg.length;
         int msgIdx = 0;
         for (int i = 0; i < numBlk; i++) {
-            if (msgLength > 89) {
-                msgLength = msgLength - 89;
+            if (msgLength > 84) {
+                msgLength = msgLength - 84;
             }
-            int msgBlkLength = 89;
+            int msgBlkLength = 84;
             if (i == numBlk - 1) {
                 msgBlkLength = msgLength;
             }
-            msgIdx = 89 * i;
+            msgIdx = 84 * i;
             frame = new byte[start.length + from.length + to.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length + end.length];
             System.arraycopy(start, 0, frame, 0, start.length);
 //            System.out.println(start.length);
@@ -174,7 +175,7 @@ public class TDLMessageHandler {
         }
 
         if (startIdx == -1 || endIdx == -1) {
-            TDLMessage rxMsg = new TDLMessage(null, null, null, null, "Corrupted Message: invalid frame");
+            TDLMessage rxMsg = new TDLMessage(null, null, null, (byte) 48, "Corrupted Message: invalid frame");
             rxStack.add(rxMsg);
             return;
         }
@@ -199,12 +200,12 @@ public class TDLMessageHandler {
             System.out.println(newChecksum);
             System.out.println(receiveChecksum);
             if (newChecksum != receiveChecksum) {
-                TDLMessage rxMsgObj = new TDLMessage(null, null, null, null, "Corrupted Message: checksum not matched");
+                TDLMessage rxMsgObj = new TDLMessage(null, null, null, (byte) 48, "Corrupted Message: checksum not matched");
                 rxStack.add(rxMsgObj);
                 return;
             }
 
-            TDLMessage rxMsgObj = new TDLMessage(null, null, null, null, rxMsg);
+            TDLMessage rxMsgObj = new TDLMessage(null, null, null, (byte) 49, rxMsg);
             rxStack.add(rxMsgObj);
 //        } catch (UnsupportedEncodingException ex) {
 //        }

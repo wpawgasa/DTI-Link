@@ -355,8 +355,8 @@ public class TestTDL extends javax.swing.JFrame {
     private void sendMsgBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMsgBtnActionPerformed
         // TODO add your handling code here:
         
-        TDLMessage msg = new TDLMessage(null, null, null, "text", msgText.getText());
-        TDLMessageHandler.formatTextMessage(msg);
+        TDLMessage msg = new TDLMessage(null, null, null, (byte) 2, msgText.getText());
+        TDLMessageHandler.formatMessage(msg);
 //        try {
 //            outputStream.write(msg.getBytes());
 //            outputStream.flush();
@@ -550,7 +550,7 @@ public class TestTDL extends javax.swing.JFrame {
                 while(isThreadAlive) {
                     if(TDLMessageHandler.rxStack.size()>0) {
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
-                        userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
+                        //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
                     }
                     Thread.sleep(100);
                 }
