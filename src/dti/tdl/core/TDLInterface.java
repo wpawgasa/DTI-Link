@@ -34,6 +34,7 @@ public class TDLInterface {
     private String timestamp;
     private InputStream inputStream;
     private OutputStream outputStream;
+    public PPLI ownpos;
     
     public TDLInterface() {
         db = new EmbeddedDB();
