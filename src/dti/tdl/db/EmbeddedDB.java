@@ -7,6 +7,7 @@ package dti.tdl.db;
 
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.TDLConnection;
+import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -271,6 +272,10 @@ public class EmbeddedDB {
             while(rs.next()) {
                 int profileId = rs.getInt("PROFILE_ID");
                 String profileName = rs.getString("PROFILE_NAME");
+                if(profileId==1) {
+                    profileName = InetAddress.getLocalHost().getHostName().substring(0, 8);
+                }
+                
                 //String commport = rs.getString("COMMPORT");
                 ConnectionProfile profile = new ConnectionProfile();
                 profile.setProfileName(profileName);
@@ -278,7 +283,7 @@ public class EmbeddedDB {
                 profiles.add(profile);
             }
             
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             return null;
         }

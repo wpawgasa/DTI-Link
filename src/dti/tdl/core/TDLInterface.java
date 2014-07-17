@@ -34,7 +34,9 @@ public class TDLInterface {
     private String timestamp;
     private InputStream inputStream;
     private OutputStream outputStream;
-    public PPLI ownpos;
+    public PPLI ownPos;
+    public String ownRadioId;
+    public String ownprofileId;
     
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -73,7 +75,7 @@ public class TDLInterface {
                                 ret.setMsg_name("list profiles");
                                 List<ConnectionProfile> profiles = db.listProfiles();
                                 if(!profiles.isEmpty()) {
-                                ret.setConn_profiles(db.listProfiles());
+                                ret.setConn_profiles(profiles);
                                 } else {
                                     ret.setMsg_err("Empty profile list");
                                 }
