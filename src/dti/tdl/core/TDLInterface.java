@@ -8,6 +8,7 @@ package dti.tdl.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.TDLConnection;
+import dti.tdl.communication.UserProfile;
 import dti.tdl.db.EmbeddedDB;
 import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
@@ -73,7 +74,7 @@ public class TDLInterface {
                                 break;
                             case "get profiles":
                                 ret.setMsg_name("list profiles");
-                                List<ConnectionProfile> profiles = db.listProfiles();
+                                List<UserProfile> profiles = db.listProfiles();
                                 if(!profiles.isEmpty()) {
                                 ret.setConn_profiles(profiles);
                                 } else {
