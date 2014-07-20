@@ -7,6 +7,7 @@ package dti.tdl.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
+import dti.tdl.communication.GPSProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.communication.UserProfile;
 import dti.tdl.db.EmbeddedDB;
@@ -14,7 +15,8 @@ import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.UIReqMessage;
-import dti.tdl.messaging.UIResMessage;
+import dti.tdl.messaging.UIResProfileMessage;
+import dti.tdl.messaging.UIResStatusMessage;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import java.io.IOException;
@@ -60,12 +62,12 @@ public class TDLInterface {
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         UIReqMessage msg = mapper.readValue(reqMsg, UIReqMessage.class);
-                        UIResMessage ret = new UIResMessage();
+                        
                         switch (msg.msg_name) {
                             case "request server status":
-                                
+                                UIResStatusMessage ret = new UIResStatusMessage();
                                 ret.setMsg_name("response server status");
-                                UIResMessage.ServerStatus serverStatus = new UIResMessage.ServerStatus();
+                                UIResStatusMessage.ServerStatus serverStatus = new UIResStatusMessage.ServerStatus();
                                 serverStatus.setStatus_name("isRunning");
                                 serverStatus.setStatus_result("OK");
                                 ret.setServerStatus(serverStatus);
@@ -73,50 +75,118 @@ public class TDLInterface {
                                 this.setReturnMsg(mapper.writeValueAsString(ret));
                                 break;
                             case "get profiles":
-                                ret.setMsg_name("list profiles");
+                                UIResProfileMessage retProf = new UIResProfileMessage();
+                                retProf.setMsg_name("list profiles");
                                 List<UserProfile> profiles = db.listProfiles();
                                 if(!profiles.isEmpty()) {
-                                ret.setConn_profiles(profiles);
+                                    retProf.setUserprofiles(profiles);
                                 } else {
-                                    ret.setMsg_err("Empty profile list");
+                                    retProf.setMsg_err("Empty profile list");
                                 }
                                 
-
-                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                retProf.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retProf));
                                 break;
                             case "get profile":
-                                ret.setMsg_name("response profile");
-                                ConnectionProfile req_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
-                                ConnectionProfile res_profile = db.getProfile(req_profile.getProfileId());
-                                
-                                ret.getConn_profiles().add(res_profile);
-                                
-                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                UIResProfileMessage retProfSingle = new UIResProfileMessage();
+                                retProfSingle.setMsg_name("response profile");
+                                UserProfile req_profile = mapper.readValue(msg.msg_params, UserProfile.class);
+                                UserProfile res_profile = db.getProfile(req_profile.getProfileId());
+                                if(!db.isDBError) {
+                                    retProfSingle.getUserprofiles().add(res_profile);
+                                } else {
+                                    retProfSingle.setMsg_err(db.DBError);
+                                }
+                                retProfSingle.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retProfSingle));
                                 break;
                             case "add new profile":
-                                ret.setMsg_name("response update profile");
-                                ConnectionProfile new_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                UIResProfileMessage retAddProf = new UIResProfileMessage();
+                                retAddProf.setMsg_name("response add profile");
+                                UserProfile new_profile = mapper.readValue(msg.msg_params, UserProfile.class);
+                                retAddProf.getUserprofiles().add(new_profile);
                                 if(db.getProfileByName(new_profile.getProfileName()).getProfileId()!=0) {
-                                    ret.setMsg_err(new_profile.getProfileName()+" already exists");
+                                    retAddProf.setMsg_err(new_profile.getProfileName()+" already exists");
                                 } else {
                                     db.insertProfile(new_profile.getProfileName());
                                     int new_profile_id = db.getMaxProfileId();
-                                    db.insertSerialConfig(new_profile_id, new_profile.getComm_port(), new_profile.getBit_rates()
-                                            , new_profile.getData_bits(), new_profile.getStop_bits(), new_profile.getParity(), new_profile.getFlowcontrol());
-                                    
+                                    retAddProf.getUserprofiles().get(0).setProfileId(new_profile_id);
+                                    if(!db.isDBError) {
+                                        db.insertSerialConfig(new_profile_id, "COM1", 38400, 8, "1", "None", "None");
+                                        db.insertGPSConfig(new_profile_id, 12, 2, 5, true);
+                                        db.insertRadioConfig(new_profile_id, 5, 100, 1, 145.125, 80);
+                                        
+                                        if(db.isDBError) {
+                                           retAddProf.setMsg_err(db.DBError); 
+                                        }
+                                    } else {
+                                        retAddProf.setMsg_err(db.DBError);
+                                    }
                                 }
-                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                retAddProf.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retAddProf));
                                 break;
                             case "update profile":
-                                ret.setMsg_name("response update profile");
-                                ConnectionProfile update_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
-                                db.updateSerialConfig(update_profile.getProfileId(), update_profile.getComm_port(), update_profile.getBit_rates()
-                                            , update_profile.getData_bits(), update_profile.getStop_bits(), update_profile.getParity(), update_profile.getFlowcontrol());
-                                
-                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                UIResProfileMessage retUpdateProf = new UIResProfileMessage();
+                                retUpdateProf.setMsg_name("response update profile");
+                                UserProfile update_profile = mapper.readValue(msg.msg_params, UserProfile.class);
+                                retUpdateProf.getUserprofiles().add(update_profile);
+                                db.updateProfile(update_profile.getProfileId(), update_profile.getProfileName());
+                                if(db.isDBError) {
+                                    retUpdateProf.setMsg_err(db.DBError); 
+                                 }
+                                retUpdateProf.getUserprofiles().get(0).setProfileId(update_profile.getProfileId());
+                                retUpdateProf.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retUpdateProf));
                                 break;
+                            case "delete profile":
+                                UIResProfileMessage retDeleteProf = new UIResProfileMessage();
+                                retDeleteProf.setMsg_name("response delete profile");
+                                UserProfile delete_profile = mapper.readValue(msg.msg_params, UserProfile.class);
+                                retDeleteProf.getUserprofiles().add(delete_profile);
+                                db.deleteProfile(delete_profile.getProfileId());
+                                if(db.isDBError) {
+                                    retDeleteProf.setMsg_err(db.DBError); 
+                                 }
+                                retDeleteProf.getUserprofiles().get(0).setProfileId(delete_profile.getProfileId());
+                                retDeleteProf.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retDeleteProf));
+                                break;
+                            case "update serial profile":
+                                UIResProfileMessage retUpdateSerial = new UIResProfileMessage();
+                                retUpdateSerial.setMsg_name("response update serial profile");
+                                ConnectionProfile serial_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                UserProfile res_update_serial_profile = new UserProfile();
+                                res_update_serial_profile.setConnProfile(serial_profile);
+                                retUpdateSerial.getUserprofiles().add(res_update_serial_profile);
+                                db.updateSerialConfig(serial_profile.getProfileId(), serial_profile.getComm_port(), serial_profile.getBit_rates(), serial_profile.getData_bits()
+                                        , serial_profile.getStop_bits(), serial_profile.getParity(), serial_profile.getFlowcontrol());
+                                if(db.isDBError) {
+                                    retUpdateSerial.setMsg_err(db.DBError); 
+                                 }
+                                retUpdateSerial.getUserprofiles().get(0).setProfileId(serial_profile.getProfileId());
+                                retUpdateSerial.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retUpdateSerial));
+                                break;
+                            case "update gps profile":
+                                UIResProfileMessage retUpdateGPS = new UIResProfileMessage();
+                                retUpdateGPS.setMsg_name("response update gps profile");
+                                GPSProfile gps_profile = mapper.readValue(msg.msg_params, GPSProfile.class);
+                                UserProfile res_update_gps_profile = new UserProfile();
+                                res_update_gps_profile.setGpsProfile(gps_profile);
+                                retUpdateGPS.getUserprofiles().add(res_update_gps_profile);
+                                db.updateGPSConfig(gps_profile.getProfileId(), gps_profile.getGpsmode(), gps_profile.getGpsupdate(), gps_profile.getGpsreport()
+                                        , gps_profile.isGpsenabled());
+                                if(db.isDBError) {
+                                    retUpdateGPS.setMsg_err(db.DBError); 
+                                 }
+                                retUpdateGPS.getUserprofiles().get(0).setProfileId(gps_profile.getProfileId());
+                                retUpdateGPS.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retUpdateGPS));
+                                break;    
                             case "connect":
-                                ret.setMsg_name("response connect");
+                                UIResProfileMessage retConn = new UIResProfileMessage();
+                                retConn.setMsg_name("response connect");
                                 ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
                                 conn.setCommPort(conn_profile.getComm_port());
                                 conn.setBitRate(conn_profile.getBit_rates());
@@ -127,9 +197,9 @@ public class TDLInterface {
                                 conn.setPortId();
                                 
                                 if(!conn.connect()) {
-                                    ret.setMsg_err("Cannot connect to serial interface");
+                                    retConn.setMsg_err("Cannot connect to serial interface");
                                 }
-                                this.setReturnMsg(mapper.writeValueAsString(ret));
+                                this.setReturnMsg(mapper.writeValueAsString(retConn));
                                 break;      
                         }
                     } catch (IOException ex) {

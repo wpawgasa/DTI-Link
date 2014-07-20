@@ -11,6 +11,7 @@ package dti.tdl.communication;
  * @author wichai.p
  */
 public class GPSProfile {
+    private int profileId;
     private int gpsmode;
     private int gpsupdate;
     private int gpsreport;
@@ -19,6 +20,15 @@ public class GPSProfile {
     public GPSProfile() {
     }
 
+    public int getProfileId() {
+        return profileId;
+    }
+
+    public void setProfileId(int profileId) {
+        this.profileId = profileId;
+    }
+
+    
     public int getGpsmode() {
         return gpsmode;
     }

@@ -6,6 +6,8 @@
 package dti.tdl.db;
 
 import dti.tdl.communication.ConnectionProfile;
+import dti.tdl.communication.GPSProfile;
+import dti.tdl.communication.RadioProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.communication.UserProfile;
 import java.net.InetAddress;
@@ -28,6 +30,8 @@ public class EmbeddedDB {
     public static final String driver = "org.apache.derby.jdbc.EmbeddedDriver";
     public static final String db_url = "jdbc:derby:tdldb;create=true";
     public Connection conn;
+    public boolean isDBError = false;
+    public String DBError = "";
     public EmbeddedDB() {
         try {
             Class.forName(driver);
@@ -51,17 +55,22 @@ public class EmbeddedDB {
             }
             rs = dbmd.getTables(null, "APP", "GPSCONFIG", null);
             if (!rs.next()) {
-                createSerialConfigTable();
+                createGPSConfigTable();
             }
             rs = dbmd.getTables(null, "APP", "RADIOCONFIG", null);
             if (!rs.next()) {
-                createSerialConfigTable();
+                createRadioConfigTable();
             }
-            
+            isDBError = false;
+            DBError = "";
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
 
@@ -70,9 +79,12 @@ public class EmbeddedDB {
             this.conn.createStatement().executeUpdate("CREATE TABLE ERRORS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",ERROR_TYPE CHAR(1),ERROR_DESC LONG VARCHAR,LOG_TIME TIMESTAMP)");
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -81,8 +93,12 @@ public class EmbeddedDB {
             this.conn.createStatement().executeUpdate("CREATE TABLE ACTIONS "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",ACTION_DESC LONG VARCHAR,LOG_TIME TIMESTAMP)");
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -92,9 +108,13 @@ public class EmbeddedDB {
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",PROFILE_ID INTEGER NOT NULL,COMMPORT VARCHAR(10), BITRATE INTEGER NOT NULL"
                     + ", DATABITS INTEGER NOT NULL, STOPBITS VARCHAR(5), PARITY VARCHAR(20), FLOWCONTROL VARCHAR(20))");
+            isDBError = false;
+            DBError = "";
             insertSerialConfig(1, "COM1", 38400, 8, "1", "None", "None");
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -103,10 +123,32 @@ public class EmbeddedDB {
             this.conn.createStatement().executeUpdate("CREATE TABLE GPSCONFIG "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",PROFILE_ID INTEGER NOT NULL,GPSMODE INTEGER NOT NULL, GPSUPDATE INTEGER NOT NULL"
+                    + ", GPSENABLED BOOLEAN NOT NULL"
                     + ", GPSREPORT INTEGER NOT NULL)");
-            insertSerialConfig(1, "COM1", 38400, 8, "1", "None", "None");
+            isDBError = false;
+            DBError = "";
+            insertGPSConfig(1, 12, 2, 5, true);
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
+        }
+    }
+    
+    public void createRadioConfigTable() {
+        try {
+            this.conn.createStatement().executeUpdate("CREATE TABLE RADIOCONFIG "
+                    + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
+                    + ",PROFILE_ID INTEGER NOT NULL,OTABAUD INTEGER NOT NULL, SLOTTIME INTEGER NOT NULL"
+                    + ",FRAMETIME INTEGER NOT NULL, FREQUENCY DOUBLE NOT NULL"
+                    + ", POWER INTEGER NOT NULL)");
+            isDBError = false;
+            DBError = "";
+            insertRadioConfig(1, 5, 100, 1, 145.125, 80);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -115,10 +157,13 @@ public class EmbeddedDB {
             this.conn.createStatement().executeUpdate("CREATE TABLE PROFILES "
                     + "(ID INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)"
                     + ",PROFILE_NAME VARCHAR(50),TIME_CREATED TIMESTAMP)");
-            
+            isDBError = false;
+            DBError = "";
             insertProfile("Default");
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -131,9 +176,69 @@ public class EmbeddedDB {
             stm.setString(1, profileName);
             stm.setTimestamp(2, new Timestamp(date.getTime()));
             stm.executeUpdate();
+            isDBError = false;
+            DBError = "";
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
+        }
+    }
+    
+    public void updateProfile(int profileId, String profileName) {
+        try {
+            String sql = "UPDATE PROFILES SET PROFILE_NAME=? WHERE ID=?";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            java.util.Date date= new java.util.Date();
+	 
+            stm.setString(1, profileName);
+            stm.setInt(2, profileId);
+            stm.executeUpdate();
+            isDBError = false;
+            DBError = "";
             
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
+        }
+    }
+    
+    public void deleteProfile(int profileId) {
+        try {
+            String sql = "DELETE FROM PROFILES WHERE ID=?";
+            PreparedStatement stm = this.conn.prepareStatement(sql);
+            java.util.Date date= new java.util.Date();
+	 
+            stm.setInt(1, profileId);
+            stm.executeUpdate();
+            
+            sql = "DELETE FROM SERIALCONFIG WHERE PROFILE_ID=?";
+            stm = this.conn.prepareStatement(sql);
+            
+            stm.setInt(1, profileId);
+            stm.executeUpdate();
+            
+            sql = "DELETE FROM GPSCONFIG WHERE PROFILE_ID=?";
+            stm = this.conn.prepareStatement(sql);
+            
+            stm.setInt(1, profileId);
+            stm.executeUpdate();
+            
+            sql = "DELETE FROM RADIOCONFIG WHERE PROFILE_ID=?";
+            stm = this.conn.prepareStatement(sql);
+            
+            stm.setInt(1, profileId);
+            stm.executeUpdate();
+            
+            isDBError = false;
+            DBError = "";
+            
+            
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -150,9 +255,12 @@ public class EmbeddedDB {
             stm.setString(6, parity);
             stm.setString(7, flowControl);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -170,9 +278,12 @@ public class EmbeddedDB {
             stm.setString(5, parity);
             stm.setString(6, flowControl);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -187,9 +298,12 @@ public class EmbeddedDB {
             stm.setInt(4, gpsreport);
             stm.setBoolean(5, gpsenabled);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -199,15 +313,18 @@ public class EmbeddedDB {
                     + "WHERE PROFILE_ID=?";
             PreparedStatement stm = this.conn.prepareStatement(sql);
             
-            stm.setInt(7, profileId);
+            stm.setInt(5, profileId);
             stm.setInt(1, gpsmode);
             stm.setInt(2, gpsupdate);
             stm.setInt(3, gpsreport);
             stm.setBoolean(4, gpsenabled);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -223,27 +340,34 @@ public class EmbeddedDB {
             stm.setDouble(5, frequency);
             stm.setInt(6, power);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
     public void updateRadioConfig(int profileId, int otabaud, int slottime, int frametime, double frequency,int power) {
         try {
-            String sql = "UPDATE GPSCONFIG SET GPSMODE=?,GPSUPDATE=?,GPSREPORT=?,GPSENABLED=? "
+            String sql = "UPDATE RADIOCONFIG SET OTABAUD=?,SLOTTIME=?,FRAMETIME=?,FREQUENCY=?,POWER=? "
                     + "WHERE PROFILE_ID=?";
             PreparedStatement stm = this.conn.prepareStatement(sql);
             
-            stm.setInt(7, profileId);
-            stm.setInt(1, gpsmode);
-            stm.setInt(2, gpsupdate);
-            stm.setInt(3, gpsreport);
-            stm.setBoolean(4, gpsenabled);
+            stm.setInt(6, profileId);
+            stm.setInt(1, otabaud);
+            stm.setInt(2, slottime);
+            stm.setInt(3, frametime);
+            stm.setDouble(4, frequency );
+            stm.setInt(5, power);
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     public void insertError(String errCode,String errDesc) {
@@ -256,9 +380,12 @@ public class EmbeddedDB {
             stm.setString(2, errDesc);
             stm.setTimestamp(3, new Timestamp(date.getTime()));
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
@@ -271,17 +398,26 @@ public class EmbeddedDB {
             stm.setString(1, actionDesc);
             stm.setTimestamp(2, new Timestamp(date.getTime()));
             stm.executeUpdate();
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
     }
     
-    public ConnectionProfile getProfile(int profileId) {
-        ConnectionProfile profile = new ConnectionProfile();
+    public UserProfile getProfile(int profileId) {
+        UserProfile profile = new UserProfile();
+        ConnectionProfile connProfile = new ConnectionProfile();
+        GPSProfile gPSProfile = new GPSProfile();
+        RadioProfile radioProfile = new RadioProfile();
         try {
-            String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
-                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID WHERE SERIALCONFIG.PROFILE_ID=?";
+            String sql = "SELECT SERIALCONFIG.*,GPSCONFIG.*,RADIOCONFIG.*, PROFILES.PROFILE_NAME AS PROFILE_NAME, PROFILES.ID AS PROFID FROM PROFILES INNER JOIN SERIALCONFIG ON "
+                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID INNER JOIN GPSCONFIG ON "
+                    + "GPSCONFIG.PROFILE_ID=PROFILES.ID INNER JOIN RADIOCONFIG ON "
+                    + "RADIOCONFIG.PROFILE_ID=PROFILES.ID "
+                    + "WHERE PROFILES.ID=?";
             PreparedStatement stm = this.conn.prepareStatement(sql);
             stm.setInt(1, profileId);
             ResultSet rs = stm.executeQuery();
@@ -291,17 +427,32 @@ public class EmbeddedDB {
                 String profileName = rs.getString("PROFILE_NAME");
                 //String commport = rs.getString("COMMPORT");
                 profile.setProfileName(profileName);
-                profile.setProfileId(rs.getInt("PROFILE_ID"));
-                profile.setComm_port(rs.getString("COMMPORT"));
-                profile.setBit_rates(rs.getInt("BITRATE"));
-                profile.setData_bits(rs.getInt("DATABITS"));
-                profile.setParity(rs.getString("PARITY"));
-                profile.setStop_bits(rs.getString("STOPBITS"));
-                profile.setFlowcontrol(rs.getString("FLOWCONTROL"));
+                profile.setProfileId(rs.getInt("PROFID"));
+                connProfile.setComm_port(rs.getString("COMMPORT"));
+                connProfile.setBit_rates(rs.getInt("BITRATE"));
+                connProfile.setData_bits(rs.getInt("DATABITS"));
+                connProfile.setParity(rs.getString("PARITY"));
+                connProfile.setStop_bits(rs.getString("STOPBITS"));
+                connProfile.setFlowcontrol(rs.getString("FLOWCONTROL"));
+                profile.setConnProfile(connProfile);
+                gPSProfile.setGpsmode(rs.getInt("GPSMODE"));
+                gPSProfile.setGpsenabled(rs.getBoolean("GPSENABLED"));
+                gPSProfile.setGpsupdate(rs.getInt("GPSUPDATE"));
+                gPSProfile.setGpsreport(rs.getInt("GPSREPORT"));
+                profile.setGpsProfile(gPSProfile);
+                radioProfile.setOtabaud(rs.getInt("OTABAUD"));
+                radioProfile.setSlottime(rs.getInt("SLOTTIME"));
+                radioProfile.setFrametime(rs.getInt("FRAMETIME"));
+                radioProfile.setFrequency(rs.getDouble("FREQUENCY"));
+                radioProfile.setPower(rs.getInt("POWER"));
+                profile.setRadioProfile(radioProfile);
             }
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
         return profile;
     }
@@ -318,18 +469,26 @@ public class EmbeddedDB {
                 maxId = rs.getInt("MAX_ID");
                 
             }
-            
+           isDBError = false;
+            DBError = ""; 
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
         return maxId;
     }
     
     public UserProfile getProfileByName(String profileName) {
         UserProfile profile = new UserProfile();
+        ConnectionProfile connProfile = new ConnectionProfile();
+        GPSProfile gPSProfile = new GPSProfile();
+        RadioProfile radioProfile = new RadioProfile();
         try {
-            String sql = "SELECT SERIALCONFIG.*, PROFILES.* FROM SERIALCONFIG INNER JOIN PROFILES ON "
-                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID WHERE SERIALCONFIG.PROFILE_ID=?";
+            String sql = "SELECT SERIALCONFIG.*,GPSCONFIG.*,RADIOCONFIG.*, PROFILES.*, PROFILES.ID AS PROFID FROM PROFILES INNER JOIN SERIALCONFIG ON "
+                    + "SERIALCONFIG.PROFILE_ID=PROFILES.ID INNER JOIN GPSCONFIG ON "
+                    + "GPSCONFIG.PROFILE_ID=PROFILES.ID INNER JOIN RADIOCONFIG ON "
+                    + "RADIOCONFIG.PROFILE_ID=PROFILES.ID WHERE PROFILES.PROFILE_NAME=?";
             PreparedStatement stm = this.conn.prepareStatement(sql);
             stm.setString(1, profileName);
             ResultSet rs = stm.executeQuery();
@@ -338,16 +497,31 @@ public class EmbeddedDB {
                 
                 profile.setProfileName(profileName);
                 profile.setProfileId(rs.getInt("PROFILE_ID"));
-                profile.setComm_port(rs.getString("COMMPORT"));
-                profile.setBit_rates(rs.getInt("BITRATE"));
-                profile.setData_bits(rs.getInt("DATABITS"));
-                profile.setParity(rs.getString("PARITY"));
-                profile.setStop_bits(rs.getString("STOPBITS"));
-                profile.setFlowcontrol(rs.getString("FLOWCONTROL"));
+                connProfile.setComm_port(rs.getString("COMMPORT"));
+                connProfile.setBit_rates(rs.getInt("BITRATE"));
+                connProfile.setData_bits(rs.getInt("DATABITS"));
+                connProfile.setParity(rs.getString("PARITY"));
+                connProfile.setStop_bits(rs.getString("STOPBITS"));
+                connProfile.setFlowcontrol(rs.getString("FLOWCONTROL"));
+                profile.setConnProfile(connProfile);
+                gPSProfile.setGpsmode(rs.getInt("GPSMODE"));
+                gPSProfile.setGpsenabled(rs.getBoolean("GPSENABLED"));
+                gPSProfile.setGpsupdate(rs.getInt("GPSUPDATE"));
+                gPSProfile.setGpsreport(rs.getInt("GPSREPORT"));
+                profile.setGpsProfile(gPSProfile);
+                radioProfile.setOtabaud(rs.getInt("OTABAUD"));
+                radioProfile.setSlottime(rs.getInt("SLOTTIME"));
+                radioProfile.setFrametime(rs.getInt("FRAMETIME"));
+                radioProfile.setFrequency(rs.getDouble("FREQUENCY"));
+                radioProfile.setPower(rs.getInt("POWER"));
+                profile.setRadioProfile(radioProfile);
             }
-            
+            isDBError = false;
+            DBError = "";
         } catch (SQLException ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
         }
         return profile;
     }
@@ -360,7 +534,7 @@ public class EmbeddedDB {
             ResultSet rs = stm.executeQuery();
             
             while(rs.next()) {
-                int profileId = rs.getInt("PROFILE_ID");
+                int profileId = rs.getInt("ID");
                 String profileName = rs.getString("PROFILE_NAME");
                 if(profileId==1) {
                     profileName = InetAddress.getLocalHost().getHostName().substring(0, 8);
@@ -372,9 +546,12 @@ public class EmbeddedDB {
                 profile.setProfileId(profileId);
                 profiles.add(profile);
             }
-            
+            isDBError = false;
+            DBError = "";
         } catch (Exception ex) {
             ex.printStackTrace();
+            isDBError = true;
+            DBError = ex.getMessage();
             return null;
         }
         return profiles;

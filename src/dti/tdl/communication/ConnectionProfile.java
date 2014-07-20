@@ -11,7 +11,7 @@ package dti.tdl.communication;
  */
 public class ConnectionProfile {
 
-    
+    private int profileId;
     private String comm_port;
     private int bit_rates;
     private int data_bits;
@@ -22,8 +22,16 @@ public class ConnectionProfile {
     public ConnectionProfile() {
     }
 
-    
+    public int getProfileId() {
+        return profileId;
+    }
 
+    public void setProfileId(int profileId) {
+        this.profileId = profileId;
+    }
+
+    
+    
     public String getComm_port() {
         return comm_port;
     }
