@@ -8,6 +8,7 @@ package dti.tdl.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.GPSProfile;
+import dti.tdl.communication.RadioProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.communication.UserProfile;
 import dti.tdl.db.EmbeddedDB;
@@ -183,7 +184,23 @@ public class TDLInterface {
                                 retUpdateGPS.getUserprofiles().get(0).setProfileId(gps_profile.getProfileId());
                                 retUpdateGPS.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retUpdateGPS));
-                                break;    
+                                break;  
+                            case "update radio profile":
+                                UIResProfileMessage retUpdateRadio = new UIResProfileMessage();
+                                retUpdateRadio.setMsg_name("response update radio profile");
+                                RadioProfile radio_profile = mapper.readValue(msg.msg_params, RadioProfile.class);
+                                UserProfile res_update_radio_profile = new UserProfile();
+                                res_update_radio_profile.setRadioProfile(radio_profile);
+                                retUpdateRadio.getUserprofiles().add(res_update_radio_profile);
+                                db.updateRadioConfig(radio_profile.getProfileId(), radio_profile.getOtabaud(), radio_profile.getSlottime(), 
+                                        radio_profile.getFrametime(), radio_profile.getFrequency(), radio_profile.getPower());
+                                if(db.isDBError) {
+                                    retUpdateRadio.setMsg_err(db.DBError); 
+                                 }
+                                retUpdateRadio.getUserprofiles().get(0).setProfileId(radio_profile.getProfileId());
+                                retUpdateRadio.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retUpdateRadio));
+                                break;      
                             case "connect":
                                 UIResProfileMessage retConn = new UIResProfileMessage();
                                 retConn.setMsg_name("response connect");
@@ -200,7 +217,31 @@ public class TDLInterface {
                                     retConn.setMsg_err("Cannot connect to serial interface");
                                 }
                                 this.setReturnMsg(mapper.writeValueAsString(retConn));
-                                break;      
+                                break;    
+                            case "setup radio":
+                                break;
+                            case "request radio status":
+                                break;
+                            case "request gps status":
+                                break;
+                            case "request own position":
+                                break;
+                            case "request own track":
+                                break; 
+                            case "request members stat":
+                                break; 
+                            case "request member stat":
+                                break;     
+                            case "request member track":
+                                break;     
+                            case "send broadcast text":
+                                break;  
+                            case "send individual text":
+                                break; 
+                            case "get broadcast text":
+                                break;  
+                            case "get individual text":
+                                break;     
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
@@ -267,6 +308,14 @@ public class TDLInterface {
         
         public void kill() {
             isThreadAlive = false;
+        }
+    }
+    
+    class PositionReportThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        @Override
+        public void run() {
+            
         }
     }
 

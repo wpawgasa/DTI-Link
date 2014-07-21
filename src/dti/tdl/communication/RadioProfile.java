@@ -16,10 +16,20 @@ public class RadioProfile {
     private int frametime;
     private double frequency;
     private int power;
-
+    private int profileId;
+    private String missionKey;
     public RadioProfile() {
     }
 
+    public int getProfileId() {
+        return profileId;
+    }
+
+    public void setProfileId(int profileId) {
+        this.profileId = profileId;
+    }
+
+    
     public int getOtabaud() {
         return otabaud;
     }
@@ -58,6 +68,14 @@ public class RadioProfile {
 
     public void setPower(int power) {
         this.power = power;
+    }
+
+    public String getMissionKey() {
+        return missionKey;
+    }
+
+    public void setMissionKey(String missionKey) {
+        this.missionKey = missionKey;
     }
     
     
