@@ -42,13 +42,13 @@ public class TDLConnection  {
     public boolean connect() {
         
         try {
-
+            errMsg = "";
             this.TimeStamp = new java.util.Date().toString();
             this.serialPort = (SerialPort) this.portId.open("TDLConnection", 2000);
             System.out.println(TimeStamp + ": " + this.portId.getName() + " opened for communicate with Radio");
 
         } catch (PortInUseException e) {
-            e.printStackTrace();
+            errMsg = e.getMessage();
             return false;
         }
         
@@ -99,6 +99,7 @@ public class TDLConnection  {
             os = serialPort.getOutputStream();
             
         } catch (IOException e) {
+            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, e);
         }
         return os;
     }

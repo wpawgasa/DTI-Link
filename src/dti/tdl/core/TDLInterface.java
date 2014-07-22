@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.GPSProfile;
 import dti.tdl.communication.RadioProfile;
+import dti.tdl.communication.SetupProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.communication.UserProfile;
 import dti.tdl.db.EmbeddedDB;
@@ -17,6 +18,7 @@ import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.UIReqMessage;
 import dti.tdl.messaging.UIResProfileMessage;
+import dti.tdl.messaging.UIResSetupMessage;
 import dti.tdl.messaging.UIResStatusMessage;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
@@ -41,6 +43,8 @@ public class TDLInterface {
     public PPLI ownPos;
     public String ownRadioId;
     public String ownprofileId;
+    public TransmitThread txT;
+    public ReceiveThread rxT;
     
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -63,7 +67,7 @@ public class TDLInterface {
                     try {
                         ObjectMapper mapper = new ObjectMapper();
                         UIReqMessage msg = mapper.readValue(reqMsg, UIReqMessage.class);
-                        
+
                         switch (msg.msg_name) {
                             case "request server status":
                                 UIResStatusMessage ret = new UIResStatusMessage();
@@ -79,12 +83,12 @@ public class TDLInterface {
                                 UIResProfileMessage retProf = new UIResProfileMessage();
                                 retProf.setMsg_name("list profiles");
                                 List<UserProfile> profiles = db.listProfiles();
-                                if(!profiles.isEmpty()) {
+                                if (!profiles.isEmpty()) {
                                     retProf.setUserprofiles(profiles);
                                 } else {
                                     retProf.setMsg_err("Empty profile list");
                                 }
-                                
+
                                 retProf.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retProf));
                                 break;
@@ -93,7 +97,7 @@ public class TDLInterface {
                                 retProfSingle.setMsg_name("response profile");
                                 UserProfile req_profile = mapper.readValue(msg.msg_params, UserProfile.class);
                                 UserProfile res_profile = db.getProfile(req_profile.getProfileId());
-                                if(!db.isDBError) {
+                                if (!db.isDBError) {
                                     retProfSingle.getUserprofiles().add(res_profile);
                                 } else {
                                     retProfSingle.setMsg_err(db.DBError);
@@ -106,19 +110,19 @@ public class TDLInterface {
                                 retAddProf.setMsg_name("response add profile");
                                 UserProfile new_profile = mapper.readValue(msg.msg_params, UserProfile.class);
                                 retAddProf.getUserprofiles().add(new_profile);
-                                if(db.getProfileByName(new_profile.getProfileName()).getProfileId()!=0) {
-                                    retAddProf.setMsg_err(new_profile.getProfileName()+" already exists");
+                                if (db.getProfileByName(new_profile.getProfileName()).getProfileId() != 0) {
+                                    retAddProf.setMsg_err(new_profile.getProfileName() + " already exists");
                                 } else {
                                     db.insertProfile(new_profile.getProfileName());
                                     int new_profile_id = db.getMaxProfileId();
                                     retAddProf.getUserprofiles().get(0).setProfileId(new_profile_id);
-                                    if(!db.isDBError) {
+                                    if (!db.isDBError) {
                                         db.insertSerialConfig(new_profile_id, "COM1", 38400, 8, "1", "None", "None");
                                         db.insertGPSConfig(new_profile_id, 12, 2, 5, true);
                                         db.insertRadioConfig(new_profile_id, 5, 100, 1, 145.125, 80);
-                                        
-                                        if(db.isDBError) {
-                                           retAddProf.setMsg_err(db.DBError); 
+
+                                        if (db.isDBError) {
+                                            retAddProf.setMsg_err(db.DBError);
                                         }
                                     } else {
                                         retAddProf.setMsg_err(db.DBError);
@@ -133,9 +137,9 @@ public class TDLInterface {
                                 UserProfile update_profile = mapper.readValue(msg.msg_params, UserProfile.class);
                                 retUpdateProf.getUserprofiles().add(update_profile);
                                 db.updateProfile(update_profile.getProfileId(), update_profile.getProfileName());
-                                if(db.isDBError) {
-                                    retUpdateProf.setMsg_err(db.DBError); 
-                                 }
+                                if (db.isDBError) {
+                                    retUpdateProf.setMsg_err(db.DBError);
+                                }
                                 retUpdateProf.getUserprofiles().get(0).setProfileId(update_profile.getProfileId());
                                 retUpdateProf.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retUpdateProf));
@@ -146,9 +150,9 @@ public class TDLInterface {
                                 UserProfile delete_profile = mapper.readValue(msg.msg_params, UserProfile.class);
                                 retDeleteProf.getUserprofiles().add(delete_profile);
                                 db.deleteProfile(delete_profile.getProfileId());
-                                if(db.isDBError) {
-                                    retDeleteProf.setMsg_err(db.DBError); 
-                                 }
+                                if (db.isDBError) {
+                                    retDeleteProf.setMsg_err(db.DBError);
+                                }
                                 retDeleteProf.getUserprofiles().get(0).setProfileId(delete_profile.getProfileId());
                                 retDeleteProf.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retDeleteProf));
@@ -160,11 +164,10 @@ public class TDLInterface {
                                 UserProfile res_update_serial_profile = new UserProfile();
                                 res_update_serial_profile.setConnProfile(serial_profile);
                                 retUpdateSerial.getUserprofiles().add(res_update_serial_profile);
-                                db.updateSerialConfig(serial_profile.getProfileId(), serial_profile.getComm_port(), serial_profile.getBit_rates(), serial_profile.getData_bits()
-                                        , serial_profile.getStop_bits(), serial_profile.getParity(), serial_profile.getFlowcontrol());
-                                if(db.isDBError) {
-                                    retUpdateSerial.setMsg_err(db.DBError); 
-                                 }
+                                db.updateSerialConfig(serial_profile.getProfileId(), serial_profile.getComm_port(), serial_profile.getBit_rates(), serial_profile.getData_bits(), serial_profile.getStop_bits(), serial_profile.getParity(), serial_profile.getFlowcontrol());
+                                if (db.isDBError) {
+                                    retUpdateSerial.setMsg_err(db.DBError);
+                                }
                                 retUpdateSerial.getUserprofiles().get(0).setProfileId(serial_profile.getProfileId());
                                 retUpdateSerial.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retUpdateSerial));
@@ -176,15 +179,14 @@ public class TDLInterface {
                                 UserProfile res_update_gps_profile = new UserProfile();
                                 res_update_gps_profile.setGpsProfile(gps_profile);
                                 retUpdateGPS.getUserprofiles().add(res_update_gps_profile);
-                                db.updateGPSConfig(gps_profile.getProfileId(), gps_profile.getGpsmode(), gps_profile.getGpsupdate(), gps_profile.getGpsreport()
-                                        , gps_profile.isGpsenabled());
-                                if(db.isDBError) {
-                                    retUpdateGPS.setMsg_err(db.DBError); 
-                                 }
+                                db.updateGPSConfig(gps_profile.getProfileId(), gps_profile.getGpsmode(), gps_profile.getGpsupdate(), gps_profile.getGpsreport(), gps_profile.isGpsenabled());
+                                if (db.isDBError) {
+                                    retUpdateGPS.setMsg_err(db.DBError);
+                                }
                                 retUpdateGPS.getUserprofiles().get(0).setProfileId(gps_profile.getProfileId());
                                 retUpdateGPS.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retUpdateGPS));
-                                break;  
+                                break;
                             case "update radio profile":
                                 UIResProfileMessage retUpdateRadio = new UIResProfileMessage();
                                 retUpdateRadio.setMsg_name("response update radio profile");
@@ -192,15 +194,15 @@ public class TDLInterface {
                                 UserProfile res_update_radio_profile = new UserProfile();
                                 res_update_radio_profile.setRadioProfile(radio_profile);
                                 retUpdateRadio.getUserprofiles().add(res_update_radio_profile);
-                                db.updateRadioConfig(radio_profile.getProfileId(), radio_profile.getOtabaud(), radio_profile.getSlottime(), 
+                                db.updateRadioConfig(radio_profile.getProfileId(), radio_profile.getOtabaud(), radio_profile.getSlottime(),
                                         radio_profile.getFrametime(), radio_profile.getFrequency(), radio_profile.getPower());
-                                if(db.isDBError) {
-                                    retUpdateRadio.setMsg_err(db.DBError); 
-                                 }
+                                if (db.isDBError) {
+                                    retUpdateRadio.setMsg_err(db.DBError);
+                                }
                                 retUpdateRadio.getUserprofiles().get(0).setProfileId(radio_profile.getProfileId());
                                 retUpdateRadio.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retUpdateRadio));
-                                break;      
+                                break;
                             case "connect":
                                 UIResProfileMessage retConn = new UIResProfileMessage();
                                 retConn.setMsg_name("response connect");
@@ -212,13 +214,46 @@ public class TDLInterface {
                                 conn.setStopBits(conn_profile.getStop_bits());
                                 conn.setFlowControl(conn_profile.getFlowcontrol());
                                 conn.setPortId();
-                                
-                                if(!conn.connect()) {
-                                    retConn.setMsg_err("Cannot connect to serial interface");
+
+                                if (!conn.connect()) {
+                                    retConn.setMsg_err(conn.errMsg);
+                                } else {
+                                    inputStream = conn.getSerialInputStream();
+                                    outputStream = conn.getSerialOutputStream();
+                                    conn.setPortListener(new TDLInterface.portListener());
+                                    txT = new TDLInterface.TransmitThread();
+
+                                    txT.start();
+
+                                    rxT = new TDLInterface.ReceiveThread();
+
+                                    rxT.start();
                                 }
+                                retConn.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retConn));
-                                break;    
+                                break;
                             case "setup radio":
+                                UIResSetupMessage retSetup = new UIResSetupMessage();
+                                retSetup.setMsg_name("response setup");
+                                SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
+                                //check if radio in cmd mode
+                                //loop until radio is free from cmd mode
+                                while(TDLMessageHandler.isCmdMode) {
+                                    Thread.sleep(200);
+                                }
+                                //Thread.sleep(10000);
+                                //Put radio into cmd mode after radio is free
+                                startCmdMode();
+                                
+                                Thread.sleep(1000);
+                                //check radio status
+                                checkRadioStatus();
+                                
+                                Thread.sleep(1000);
+                                quitCmdMode();
+                                retSetup.setMsg_err("Debug");
+                                retSetup.setMsg_params(msg.msg_params);
+                                this.setReturnMsg(mapper.writeValueAsString(retSetup));
                                 break;
                             case "request radio status":
                                 break;
@@ -227,23 +262,25 @@ public class TDLInterface {
                             case "request own position":
                                 break;
                             case "request own track":
-                                break; 
+                                break;
                             case "request members stat":
-                                break; 
+                                break;
                             case "request member stat":
-                                break;     
+                                break;
                             case "request member track":
-                                break;     
+                                break;
                             case "send broadcast text":
-                                break;  
+                                break;
                             case "send individual text":
-                                break; 
+                                break;
                             case "get broadcast text":
-                                break;  
+                                break;
                             case "get individual text":
-                                break;     
+                                break;
                         }
                     } catch (IOException ex) {
+                        Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (InterruptedException ex) {
                         Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
@@ -255,27 +292,88 @@ public class TDLInterface {
 
         }
     }
-    
+
+    private void startCmdMode() {                                            
+        // TODO add your handling code here:
+        String msg = "+++";
+        System.out.println("start cmd");
+        try {
+            
+            outputStream.write(msg.getBytes());
+            outputStream.flush();
+            TDLMessageHandler.isCmdMode = true;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }      
+    private void quitCmdMode() {                                            
+        // TODO add your handling code here:
+        String msg = "ATCN";
+        System.out.println("start cmd");
+        try {
+            
+            outputStream.write(msg.getBytes());
+            outputStream.write((byte)13);
+            outputStream.flush();
+            TDLMessageHandler.isCmdMode = false;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }      
+    public void checkRadioStatus() {
+        String msg = "ATMY";
+        System.out.println("check radio");
+        int maxWaitingCount = 5;
+        
+        try {
+            TDLMessageHandler.cmdReqStack.add(msg);
+            outputStream.write(msg.getBytes());
+            outputStream.write((byte)13);
+            outputStream.flush();
+            int waitingCount = 0;
+            while(TDLMessageHandler.cmdResStack.size()<=0&&waitingCount<maxWaitingCount) {
+            Thread.sleep(500);
+            waitingCount++;
+            }
+            
+            if(TDLMessageHandler.cmdResStack.size()>0) {
+                StringBuilder cmdRes = new StringBuilder();
+                String endRes = "";
+                
+                while(TDLMessageHandler.cmdResStack.size()>0) {
+                    //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
+                    //endRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
+                }
+                //System.out.println(cmdRes.toString());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     public class TransmitThread extends Thread {
+
         private volatile boolean isThreadAlive = true;
+
         @Override
         public void run() {
             try {
-                while(isThreadAlive) {
-                    if(TDLMessageHandler.txStack.size()>0) {
+                while (isThreadAlive) {
+                    if (TDLMessageHandler.txStack.size() > 0) {
                         //String txFrame = TDLMessageHandler.txStack.removeFirst();
                         byte[] txFrame = TDLMessageHandler.getBytesFromQueue();
 
-                        try { 
+                        try {
                             outputStream.write(txFrame);
                             outputStream.flush();
-                                
+
                         } catch (Exception ex) {
                             Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                            
-                            
-                        
+
                     }
                     Thread.sleep(1000);
                 }
@@ -283,19 +381,21 @@ public class TDLInterface {
                 ex.printStackTrace();
             }
         }
-        
+
         public void kill() {
             isThreadAlive = false;
         }
     }
-    
+
     public class ReceiveThread extends Thread {
+
         private volatile boolean isThreadAlive = true;
+
         @Override
         public void run() {
             try {
-                while(isThreadAlive) {
-                    if(TDLMessageHandler.rxStack.size()>0) {
+                while (isThreadAlive) {
+                    if (TDLMessageHandler.rxStack.size() > 0) {
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
                         //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
                     }
@@ -305,17 +405,19 @@ public class TDLInterface {
                 ex.printStackTrace();
             }
         }
-        
+
         public void kill() {
             isThreadAlive = false;
         }
     }
-    
+
     class PositionReportThread extends Thread {
+
         private volatile boolean isThreadAlive = true;
+
         @Override
         public void run() {
-            
+
         }
     }
 
@@ -339,8 +441,8 @@ public class TDLInterface {
                     int c;
                     byte[] b = {(byte) 1};
                     try {
-                        while ((b[0] = (byte) inputStream.read()) != (byte)10) {
-                            if (b[0] != (byte)13) {
+                        while ((b[0] = (byte) inputStream.read()) != (byte) 10) {
+                            if (b[0] != (byte) 13) {
                                 readBuffer.append(new String(b));
                             }
                         }
@@ -348,15 +450,22 @@ public class TDLInterface {
                         timestamp = new java.util.Date().toString();
                         System.out.println(timestamp + ": input received:" + scannedInput);
                         //displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
-                        
-                        if(scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
-                            System.out.println(scannedInput.substring(0, 6));
-                            PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
-                            System.out.println("own position: "+ppli.getPosLat()+", "+ppli.getPosLon());
-                            //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
-                        }
-                        if(scannedInput.charAt(0)== (char)1) {
-                            TDLMessageHandler.deformatMessage(scannedInput.getBytes());
+                        System.out.println(TDLMessageHandler.isCmdMode);
+                        if (TDLMessageHandler.isCmdMode) {
+                            
+                            if(TDLMessageHandler.cmdReqStack.size()>0) {
+                                TDLMessageHandler.cmdResStack.add(scannedInput);
+                            }
+                        } else {
+                            if (scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
+                                System.out.println(scannedInput.substring(0, 6));
+                                PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
+                                System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
+                                //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
+                            }
+                            if (scannedInput.charAt(0) == (char) 1) {
+                                TDLMessageHandler.deformatMessage(scannedInput.getBytes());
+                            }
                         }
                     } catch (IOException e) {
                     }

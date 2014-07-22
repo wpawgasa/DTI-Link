@@ -24,7 +24,9 @@ public class TDLMessageHandler {
     public static boolean hasUnfinishedMsg = false;
     public final static LinkedList<String> txStack = new LinkedList<String>();
     public final static LinkedList<TDLMessage> rxStack = new LinkedList<TDLMessage>();
-
+    public final static LinkedList<String> cmdReqStack = new LinkedList<String>();
+    public final static LinkedList<String> cmdResStack = new LinkedList<String>();
+    public static boolean isCmdMode = false;
     public static void formatMessage(TDLMessage message) {
         //use 9600 bps slot time = 100 ms
         //max frame size = 100 bytes
@@ -222,6 +224,8 @@ public class TDLMessageHandler {
         }
         return txBytes;
     }
+    
+    
     public static byte[] hexStringToByteArray(String s) {
         if (s == null || s == "") {
             s = "0000";
