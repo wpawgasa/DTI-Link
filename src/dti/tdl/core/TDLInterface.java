@@ -247,7 +247,9 @@ public class TDLInterface {
                                 
                                 Thread.sleep(1000);
                                 //check radio status
-                                checkRadioStatus();
+                                if(checkRadioStatus()!=null) {
+                                    Thread.sleep(1000);
+                                }
                                 
                                 Thread.sleep(1000);
                                 quitCmdMode();
@@ -320,11 +322,11 @@ public class TDLInterface {
             ex.printStackTrace();
         }
     }      
-    public void checkRadioStatus() {
+    public String checkRadioStatus() {
         String msg = "ATMY";
         System.out.println("check radio");
         int maxWaitingCount = 5;
-        
+        String radioID = null;
         try {
             TDLMessageHandler.cmdReqStack.add(msg);
             outputStream.write(msg.getBytes());
@@ -337,21 +339,35 @@ public class TDLInterface {
             }
             
             if(TDLMessageHandler.cmdResStack.size()>0) {
-                StringBuilder cmdRes = new StringBuilder();
+                String cmdRes = null;
                 String endRes = "";
-                
+                String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
                 while(TDLMessageHandler.cmdResStack.size()>0) {
                     //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
-                    System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
+                    //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
+                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    if(cmdRes.equals(cmdReq)) {
+                        cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                        radioID = cmdRes;
+                    }
+                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    if(cmdRes.equals("OK")) {
+                        return radioID;
+                    }
+                    
+                    
                 }
+                
                 //System.out.println(cmdRes.toString());
             }
+            
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (InterruptedException ex) {
             Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return null;
     }
 
     public class TransmitThread extends Thread {
