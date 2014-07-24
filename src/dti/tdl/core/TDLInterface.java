@@ -236,6 +236,7 @@ public class TDLInterface {
                                 UIResSetupMessage retSetup = new UIResSetupMessage();
                                 retSetup.setMsg_name("response setup");
                                 SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
+                                retSetup.setSetupProfile(setup_profile);
                                 //check if radio in cmd mode
                                 //loop until radio is free from cmd mode
                                 while(TDLMessageHandler.isCmdMode) {
@@ -247,13 +248,20 @@ public class TDLInterface {
                                 
                                 Thread.sleep(1000);
                                 //check radio status
-                                if(checkRadioStatus()!=null) {
+                                
+                                if(checkRadioStatus()) {
+                                    retSetup.getSetupProfile().setRadioId(ownRadioId);
+                                    
+                                    //Select channel
                                     Thread.sleep(1000);
+                                    
+                                } else {
+                                    retSetup.setMsg_err("Radio Offline");
                                 }
                                 
                                 Thread.sleep(1000);
                                 quitCmdMode();
-                                retSetup.setMsg_err("Debug");
+                                
                                 retSetup.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
                                 break;
@@ -322,11 +330,11 @@ public class TDLInterface {
             ex.printStackTrace();
         }
     }      
-    public String checkRadioStatus() {
+    public boolean checkRadioStatus() {
         String msg = "ATMY";
         System.out.println("check radio");
         int maxWaitingCount = 5;
-        String radioID = null;
+        
         try {
             TDLMessageHandler.cmdReqStack.add(msg);
             outputStream.write(msg.getBytes());
@@ -349,11 +357,11 @@ public class TDLInterface {
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                     if(cmdRes.equals(cmdReq)) {
                         cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                        radioID = cmdRes;
+                        ownRadioId = cmdRes;
                     }
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                     if(cmdRes.equals("OK")) {
-                        return radioID;
+                        return true;
                     }
                     
                     
@@ -367,7 +375,87 @@ public class TDLInterface {
         } catch (InterruptedException ex) {
             Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return null;
+        return false;
+    }
+    
+    public boolean selectRadioChannel(int channel) {
+        String msg = "ATHP "+channel;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setRadioFreq(double frequency) {
+        String msg = "ATFX "+frequency;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setRadioPwr(int power) {
+        String msg = "ATPO "+power;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setGPSMode(int mode) {
+        String msg = "GPS "+mode;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setGPSUpdate(int frequency) {
+        String msg = "ATFX "+frequency;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    
+    public boolean writeSingleLnCmd(String cmd) {
+        String msg = cmd;
+        System.out.println("write cmd");
+        int maxWaitingCount = 5;
+        
+        try {
+            TDLMessageHandler.cmdReqStack.add(msg);
+            outputStream.write(msg.getBytes());
+            outputStream.write((byte)13);
+            outputStream.flush();
+            int waitingCount = 0;
+            while(TDLMessageHandler.cmdResStack.size()<=0&&waitingCount<maxWaitingCount) {
+            Thread.sleep(500);
+            waitingCount++;
+            }
+            
+            if(TDLMessageHandler.cmdResStack.size()>0) {
+                String cmdRes = null;
+                String endRes = "";
+                String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
+                while(TDLMessageHandler.cmdResStack.size()>0) {
+                    //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
+                    //endRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
+                    
+                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    if(cmdRes.equals("OK")) {
+                        return true;
+                    }
+                    
+                    
+                }
+                
+                //System.out.println(cmdRes.toString());
+            }
+            
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return true;
     }
 
     public class TransmitThread extends Thread {

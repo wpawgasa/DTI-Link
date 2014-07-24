@@ -12,6 +12,7 @@ package dti.tdl.communication;
  */
 public class SetupProfile {
     private int profileId;
+    private String radioId;
     private String missionkey;
     private RadioProfile radioprofile;
     private GPSProfile gpsprofile;
@@ -25,6 +26,14 @@ public class SetupProfile {
 
     public void setProfileId(int profileId) {
         this.profileId = profileId;
+    }
+
+    public String getRadioId() {
+        return radioId;
+    }
+
+    public void setRadioId(String radioId) {
+        this.radioId = radioId;
     }
 
     public String getMissionkey() {
