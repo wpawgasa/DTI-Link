@@ -406,12 +406,63 @@ public class TDLInterface {
         return writeSingleLnCmd(msg);
     }
     
-    public boolean setGPSUpdate(int frequency) {
-        String msg = "ATFX "+frequency;
+    public boolean setNMEAOUT(int isEnabled) {
+        String msg = "NMEAOUT "+isEnabled;
         
         
         return writeSingleLnCmd(msg);
     }
+    
+    public boolean setNMEAMASK(int mask) {
+        String msg = "NMEAMASK "+mask;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setKEY(String key) {
+        String msg = "KEYPHRASE "+key;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setOTABaud(int rate) {
+        String msg = "ATR2 "+rate;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setSlottime(int time) {
+        String msg = "SLOTTIME "+time;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setTDMAtime(int time) {
+        String msg = "TDMATIME "+time;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setWMX(int isEnabled) {
+        String msg = "WMX "+isEnabled;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    public boolean setGPSUpdate(int frequency) {
+        String msg = "NMEARATE "+frequency;
+        
+        
+        return writeSingleLnCmd(msg);
+    }
+    
+    
     
     
     public boolean writeSingleLnCmd(String cmd) {
