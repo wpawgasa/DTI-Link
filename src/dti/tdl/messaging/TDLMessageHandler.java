@@ -264,15 +264,23 @@ public class TDLMessageHandler {
         String posTime = posValues[1];
         String posDate = posValues[9];
         
-//        double posLat = degreeToDecimal(posValues[3]);
-//        double posLon = degreeToDecimal(posValues[5]);
-        double posLat = Double.parseDouble(posValues[3]);
-        double posLon = Double.parseDouble(posValues[5]);
-        double posSpeed = Double.parseDouble(posValues[7]);
-        double posTC = Double.parseDouble(posValues[8]);
-        double posMV = Double.parseDouble(posValues[9]);
+        double posLat = degreeToDecimal(posValues[3]);
+        double posLon = degreeToDecimal(posValues[5]);
+//        double posLat = Double.parseDouble(posValues[3]);
+//        double posLon = Double.parseDouble(posValues[5]);
+        double posSpeed = 0.0;
+        if(!posValues[7].isEmpty()) {
+        posSpeed = Double.parseDouble(posValues[7]);
+        } 
+        double posTC = 0.0;
+        if(!posValues[8].isEmpty()) {
+        posTC = Double.parseDouble(posValues[8]);
+        }
+        double posMV = 0.0;
+        if(!posValues[9].isEmpty()) {
+        posMV = Double.parseDouble(posValues[9]);
+        }
         
-        pos.setPosId("0000");
         pos.setPosDate(posDate);
         pos.setPosTime(posTime);
         pos.setPosLat(posLat);
@@ -284,17 +292,11 @@ public class TDLMessageHandler {
     }
 
     public static double degreeToDecimal(String degreeStr) {
-        String posMinStr = degreeStr.substring(degreeStr.length()-5,2);
-        String posSecondStr = degreeStr.substring(degreeStr.length()-2,2);
-        String posDegreeStr = degreeStr.substring(0,degreeStr.length()-5);
+        String posMinStr = degreeStr.substring(degreeStr.length()-8,degreeStr.length());
+        String posDegreeStr = degreeStr.substring(0,degreeStr.length()-8);
         double posMin = Double.parseDouble(posMinStr);
-        double posSecond = Double.parseDouble(posSecondStr);
-        posSecond = posMin*60 + posSecond;
-        posSecondStr = String.valueOf(posSecond);
-        int decimal = posDegreeStr.length();
-        posSecond = posSecond/decimal;
         double posDegree = Double.parseDouble(posDegreeStr);
-        return posDegree+posSecond;
+        return posDegree+posMin/60;
         
     }
 }

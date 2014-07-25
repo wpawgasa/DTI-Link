@@ -13,6 +13,7 @@ package dti.tdl.messaging;
 public class PPLI {
     
     public String posId;
+    public String posName;
     public double posLat;
     public double posLon;
     public double speed;
@@ -33,6 +34,15 @@ public class PPLI {
         this.posId = posId;
     }
 
+    public String getPosName() {
+        return posName;
+    }
+
+    public void setPosName(String posName) {
+        this.posName = posName;
+    }
+
+    
     public double getPosLat() {
         return posLat;
     }

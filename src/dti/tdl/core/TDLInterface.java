@@ -17,6 +17,7 @@ import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.UIReqMessage;
+import dti.tdl.messaging.UIResPPLIMessage;
 import dti.tdl.messaging.UIResProfileMessage;
 import dti.tdl.messaging.UIResSetupMessage;
 import dti.tdl.messaging.UIResStatusMessage;
@@ -25,6 +26,7 @@ import gnu.io.SerialPortEventListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,11 +42,13 @@ public class TDLInterface {
     private String timestamp;
     private InputStream inputStream;
     private OutputStream outputStream;
-    public PPLI ownPos;
+    public LinkedList<PPLI> ownTrack = new LinkedList<PPLI>();
     public String ownRadioId;
     public String ownprofileId;
     public TransmitThread txT;
     public ReceiveThread rxT;
+    public String radioErr;
+    public int posreportRate;
     
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -98,6 +102,7 @@ public class TDLInterface {
                                 UserProfile req_profile = mapper.readValue(msg.msg_params, UserProfile.class);
                                 UserProfile res_profile = db.getProfile(req_profile.getProfileId());
                                 if (!db.isDBError) {
+                                    ownprofileId = res_profile.getProfileName();
                                     retProfSingle.getUserprofiles().add(res_profile);
                                 } else {
                                     retProfSingle.setMsg_err(db.DBError);
@@ -218,6 +223,7 @@ public class TDLInterface {
                                 if (!conn.connect()) {
                                     retConn.setMsg_err(conn.errMsg);
                                 } else {
+                                    
                                     inputStream = conn.getSerialInputStream();
                                     outputStream = conn.getSerialOutputStream();
                                     conn.setPortListener(new TDLInterface.portListener());
@@ -254,10 +260,108 @@ public class TDLInterface {
                                     
                                     //Select channel
                                     Thread.sleep(1000);
+                                    if(!selectRadioChannel(1)) {
+                                        break;
+                                    }
+                                    
+                                    //Set frequency
+                                    Thread.sleep(1000);
+                                    if(!setRadioFreq(setup_profile.getRadioprofile().getFrequency())) {
+                                        break;
+                                    }
+                                    
+                                    //Set power output
+                                    Thread.sleep(1000);
+                                    if(!setRadioPwr(setup_profile.getRadioprofile().getPower())) {
+                                        break;
+                                    }
+                                    
+                                    //Set ota baud
+                                    Thread.sleep(1000);
+                                    if(!setOTABaud(setup_profile.getRadioprofile().getOtabaud())) {
+                                        break;
+                                    }
+                                    
+                                    //Set slot time
+                                    Thread.sleep(1000);
+                                    if(!setSlottime(setup_profile.getRadioprofile().getSlottime())) {
+                                        break;
+                                    }
+                                    
+                                    //Set frame time
+                                    Thread.sleep(1000);
+                                    if(!setTDMAtime(setup_profile.getRadioprofile().getFrametime())) {
+                                        break;
+                                    }
+                                    
+                                    
+                                    //set nmeamask
+                                    Thread.sleep(1000);
+                                    if(!setNMEAMASK(256)) {
+                                        break;
+                                    }
+                                    
+                                    //disable WMX
+                                    Thread.sleep(1000);
+                                    if(!setWMX(0)) {
+                                        break;
+                                    }
+                                        
+                                    //Set key
+                                    Thread.sleep(1000);
+                                    if(!setup_profile.getMissionkey().equals("")) {
+                                        
+                                        if(!setKEY(setup_profile.getMissionkey())) {
+                                            break;
+                                        }
+                                    } else {
+                                        if(!setKEY("0")) {
+                                            break;
+                                        }
+                                    }
+                                    //Enable GPS
+                                    
+                                    if(setup_profile.getGpsprofile().isGpsenabled()) {
+                                        
+                                        //set gps mode
+                                        Thread.sleep(1000);
+                                        if(!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
+                                            break;
+                                        }
+                                        //enable gps report message
+                                        Thread.sleep(1000);
+                                        if(!setNMEAOUT(1)) {
+                                            break;
+                                        }
+                                        //set gps update rate
+                                        Thread.sleep(1000);
+                                        if(!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
+                                            break;
+                                        }
+                                        //set gps report rate
+                                        posreportRate = setup_profile.getGpsprofile().getGpsreport();
+                                        //start position report
+                                        
+                                        
+                                    } else {
+                                        Thread.sleep(1000);
+                                        if(!setGPSMode(0)) {
+                                            break;
+                                        } 
+                                        
+                                        Thread.sleep(1000);
+                                        if(!setNMEAOUT(0)) {
+                                            break;
+                                        }
+                                        
+                                    }
                                     
                                 } else {
-                                    retSetup.setMsg_err("Radio Offline");
+                                    radioErr = "Radio Offline";
                                 }
+                                
+                                retSetup.setMsg_err(radioErr);
+                                
                                 
                                 Thread.sleep(1000);
                                 quitCmdMode();
@@ -270,6 +374,13 @@ public class TDLInterface {
                             case "request gps status":
                                 break;
                             case "request own position":
+                                UIResPPLIMessage retOwnPPLI = new UIResPPLIMessage();
+                                retOwnPPLI.setMsg_name("response own position");
+                                if(ownTrack.size()>0) {
+                                    PPLI curr_own_pos = ownTrack.getLast();
+                                    retOwnPPLI.getTracks().add(curr_own_pos);
+                                } 
+                                this.setReturnMsg(mapper.writeValueAsString(retOwnPPLI));
                                 break;
                             case "request own track":
                                 break;
@@ -319,7 +430,7 @@ public class TDLInterface {
     private void quitCmdMode() {                                            
         // TODO add your handling code here:
         String msg = "ATCN";
-        System.out.println("start cmd");
+        System.out.println("exit cmd");
         try {
             
             outputStream.write(msg.getBytes());
@@ -355,12 +466,16 @@ public class TDLInterface {
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
                     //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                    System.out.println(cmdRes);
                     if(cmdRes.equals(cmdReq)) {
                         cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+                        System.out.println(cmdRes);
                         ownRadioId = cmdRes;
+                        
                     }
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                     if(cmdRes.equals("OK")) {
+                        System.out.println(cmdRes);
                         return true;
                     }
                     
@@ -506,7 +621,8 @@ public class TDLInterface {
         } catch (InterruptedException ex) {
             Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return true;
+        radioErr = "Radio Cmd Error: "+msg;
+        return false;
     }
 
     public class TransmitThread extends Thread {
@@ -616,6 +732,9 @@ public class TDLInterface {
                                 System.out.println(scannedInput.substring(0, 6));
                                 PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
                                 System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
+                                ppli.setPosId(ownRadioId);
+                                ppli.setPosName(ownprofileId);
+                                ownTrack.add(ppli);
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
@@ -623,6 +742,7 @@ public class TDLInterface {
                             }
                         }
                     } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
                     break;
