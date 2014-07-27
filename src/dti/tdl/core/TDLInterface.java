@@ -43,17 +43,20 @@ public class TDLInterface {
     private InputStream inputStream;
     private OutputStream outputStream;
     public LinkedList<PPLI> ownTrack = new LinkedList<PPLI>();
+    public LinkedList<PPLI> memberTracks = new LinkedList<PPLI>();
+    
     public String ownRadioId;
     public String ownprofileId;
     public TransmitThread txT;
     public ReceiveThread rxT;
+    public PositionReportThread reportT;
     public String radioErr;
     public int posreportRate;
     
     public TDLInterface() {
         db = new EmbeddedDB();
         conn = new TDLConnection();
-
+        
         setupServer();
     }
 
@@ -356,6 +359,27 @@ public class TDLInterface {
                                         
                                     }
                                     
+                                    //Calculate max message bytes
+                                    double slottime = (double)setup_profile.getRadioprofile().getSlottime();
+                                    int ota = setup_profile.getRadioprofile().getOtabaud();
+                                    double bitrate = 0;
+                                    switch(ota) {
+                                        case 3:
+                                            bitrate = 4800;
+                                            break;
+                                        case 5:
+                                            bitrate = 9600;
+                                            break;
+                                        case 6:
+                                            bitrate = 19200;
+                                            break;
+                                        default:
+                                            bitrate = 9600;
+                                            break;
+                                    }
+                                    
+                                    TDLMessageHandler.messageMaxBytes = Math.floor(slottime*bitrate*0.001/8)-TDLMessageHandler.messageOverheadBytes;
+                                    
                                 } else {
                                     radioErr = "Radio Offline";
                                 }
@@ -365,6 +389,10 @@ public class TDLInterface {
                                 
                                 Thread.sleep(1000);
                                 quitCmdMode();
+                                
+                                //Start position report thread
+                                reportT = new TDLInterface.PositionReportThread();
+                                reportT.start();
                                 
                                 retSetup.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
@@ -669,6 +697,11 @@ public class TDLInterface {
                     if (TDLMessageHandler.rxStack.size() > 0) {
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
                         //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
+                        byte msgType = rxMsg.getMsgType();
+                        if(msgType==(byte) 49) {
+                            //receive message is position report
+                            
+                        }
                     }
                     Thread.sleep(100);
                 }
@@ -688,7 +721,25 @@ public class TDLInterface {
 
         @Override
         public void run() {
-
+            try {
+                while (isThreadAlive) {
+                    if (ownTrack.size() > 0) {
+                        PPLI txPPLI = ownTrack.getLast();
+                        byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
+                        TDLMessage msg = new TDLMessage(ownRadioId, null, null, (byte) 49, ppliBytes);
+                        TDLMessageHandler.constructFrame(msg);
+                    }
+                    Thread.sleep(posreportRate);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        public void kill() {
+            isThreadAlive = false;
+        }
+        public boolean isRunning() {
+            return isThreadAlive;
         }
     }
 
@@ -738,7 +789,7 @@ public class TDLInterface {
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
-                                TDLMessageHandler.deformatMessage(scannedInput.getBytes());
+                                TDLMessageHandler.deFraming(scannedInput.getBytes());
                             }
                         }
                     } catch (IOException e) {

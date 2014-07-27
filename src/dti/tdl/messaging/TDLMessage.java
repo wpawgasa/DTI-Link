@@ -14,9 +14,9 @@ public class TDLMessage {
     public String toId;
     public String msgId;
     public byte msgType;
-    public String msg;
+    public byte[] msg;
 
-    public TDLMessage(String fromId, String toId, String msgId, byte msgType, String msg) {
+    public TDLMessage(String fromId, String toId, String msgId, byte msgType, byte[] msg) {
         this.fromId = fromId;
         this.toId = toId;
         this.msgId = msgId;
@@ -40,7 +40,7 @@ public class TDLMessage {
         return msgType;
     }
 
-    public String getMsg() {
+    public byte[] getMsg() {
         return msg;
     }
 

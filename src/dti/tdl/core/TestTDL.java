@@ -355,8 +355,8 @@ public class TestTDL extends javax.swing.JFrame {
     private void sendMsgBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMsgBtnActionPerformed
         // TODO add your handling code here:
         
-        TDLMessage msg = new TDLMessage(null, null, null, (byte) 2, msgText.getText());
-        TDLMessageHandler.formatMessage(msg);
+        TDLMessage msg = new TDLMessage(null, null, null, (byte) 2, msgText.getText().getBytes());
+        TDLMessageHandler.constructFrame(msg);
 //        try {
 //            outputStream.write(msg.getBytes());
 //            outputStream.flush();
@@ -516,7 +516,7 @@ public class TestTDL extends javax.swing.JFrame {
 //                        try {
                             //String txMsg = new String(txFrame.getBytes("UTF-8"), "UTF-8");
                             //System.out.println(txMsg);
-                            TDLMessageHandler.deformatMessage(txFrame);
+                            TDLMessageHandler.deFraming(txFrame);
     //                        try { 
                            // outputStream.write(txFrame.getBytes());
                            // outputStream.flush();
@@ -601,7 +601,7 @@ public class TestTDL extends javax.swing.JFrame {
                             currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                         }
                         if(scannedInput.charAt(0)== (char)1) {
-                            TDLMessageHandler.deformatMessage(scannedInput.getBytes());
+                            TDLMessageHandler.deFraming(scannedInput.getBytes());
                         }
                     } catch (IOException e) {
                     }
