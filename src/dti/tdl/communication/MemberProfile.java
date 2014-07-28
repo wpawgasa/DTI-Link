@@ -6,6 +6,10 @@
 
 package dti.tdl.communication;
 
+import dti.tdl.messaging.PPLI;
+import java.util.Date;
+
+
 /**
  *
  * @author Administrator
@@ -13,7 +17,9 @@ package dti.tdl.communication;
 public class MemberProfile {
     private String radioId;
     private String profileName;
-    private String status;
+    private PPLI currPos;
+    private boolean status;
+    private Date updateTime;
 
     public MemberProfile() {
     }
@@ -34,12 +40,28 @@ public class MemberProfile {
         this.profileName = profileName;
     }
 
-    public String getStatus() {
+    public boolean getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(boolean status) {
         this.status = status;
+    }
+
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public PPLI getCurrPos() {
+        return currPos;
+    }
+
+    public void setCurrPos(PPLI currPos) {
+        this.currPos = currPos;
     }
     
     

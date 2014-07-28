@@ -18,6 +18,7 @@ import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.UIReqMessage;
+import dti.tdl.messaging.UIResMembersMessage;
 import dti.tdl.messaging.UIResPPLIMessage;
 import dti.tdl.messaging.UIResProfileMessage;
 import dti.tdl.messaging.UIResSetupMessage;
@@ -28,10 +29,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.derby.client.am.DateTime;
 
 /**
  *
@@ -430,11 +433,16 @@ public class TDLInterface {
                                 break;
                             case "request own track":
                                 break;
-                            case "request members stat":
+                            case "request members":
+                                UIResMembersMessage retMembers = new UIResMembersMessage();
+                                retMembers.setMsg_name("response members");
+                                if(members.size()>0) {
+                                    retMembers.setMembers(members);
+                                } 
+                                this.setReturnMsg(mapper.writeValueAsString(retMembers));
+                                
                                 break;
-                            case "request member stat":
-                                break;
-                            case "request member track":
+                            case "request member record":
                                 break;
                             case "send broadcast text":
                                 break;
@@ -632,7 +640,16 @@ public class TDLInterface {
         }
         return false;
     }
-    
+ 
+    public MemberProfile findMember(String radioId,String profileName) {
+        for (int i = 0; i < members.size(); i++) {
+            MemberProfile member = members.get(i);
+            if(member.getRadioId().equals(radioId)&&member.getProfileName().equals(profileName)) {
+                return member;
+            }
+        }
+        return null;
+    }
     
     public boolean writeSingleLnCmd(String cmd) {
         String msg = cmd;
@@ -738,7 +755,14 @@ public class TDLInterface {
                                 MemberProfile newMember = new MemberProfile();
                                 newMember.setRadioId(rcvPPLI.getPosId());
                                 newMember.setProfileName(rcvPPLI.getPosName());
+                                newMember.setStatus(true);
+                                newMember.setCurrPos(rcvPPLI);
+                                newMember.setUpdateTime(new Date());
                                 members.add(newMember);
+                            } else {
+                                MemberProfile foundMember = findMember(rcvPPLI.getPosId(), rcvPPLI.getPosName());
+                                foundMember.setCurrPos(rcvPPLI);
+                                foundMember.setUpdateTime(new Date());
                             }
                         }
                     }
