@@ -16,12 +16,13 @@ public class TDLMessage {
     public byte msgType;
     public byte[] msg;
 
-    public TDLMessage(String fromId, String toId, String msgId, byte msgType, byte[] msg) {
+    public TDLMessage(String profileId,String fromId, String toId, String msgId, byte msgType, byte[] msg) {
         this.fromId = fromId;
         this.toId = toId;
         this.msgId = msgId;
         this.msgType = msgType;
         this.msg = msg;
+        this.profileId = profileId;
     }
 
     public String getFromId() {

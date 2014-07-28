@@ -8,6 +8,7 @@ package dti.tdl.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dti.tdl.communication.ConnectionProfile;
 import dti.tdl.communication.GPSProfile;
+import dti.tdl.communication.MemberProfile;
 import dti.tdl.communication.RadioProfile;
 import dti.tdl.communication.SetupProfile;
 import dti.tdl.communication.TDLConnection;
@@ -26,6 +27,7 @@ import gnu.io.SerialPortEventListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -44,12 +46,14 @@ public class TDLInterface {
     private OutputStream outputStream;
     public LinkedList<PPLI> ownTrack = new LinkedList<PPLI>();
     public LinkedList<PPLI> memberTracks = new LinkedList<PPLI>();
+    public List<MemberProfile> members = new ArrayList<MemberProfile>();
     
     public String ownRadioId;
     public String ownprofileId;
     public TransmitThread txT;
     public ReceiveThread rxT;
     public PositionReportThread reportT;
+    public SimulateRadioThread simT;
     public String radioErr;
     public int posreportRate;
     
@@ -394,6 +398,20 @@ public class TDLInterface {
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
                                 
+                                PPLI simRadio1 = new PPLI();
+                                simRadio1.setPosId("0002");
+                                simRadio1.setPosName("Mem2");
+                                simRadio1.setPosLat(13.910016);
+                                simRadio1.setPosLon(100.550662);
+                                simRadio1.setSpeed(0.0);
+                                simRadio1.setTrueCourse(0.0);
+                                simRadio1.setMagVariation(0.0);
+                                simRadio1.setPosDate("072814");
+                                simRadio1.setPosTime("000000");
+                                
+                                simT = new TDLInterface.SimulateRadioThread(simRadio1);
+                                simT.start();
+                                
                                 retSetup.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
                                 break;
@@ -605,7 +623,15 @@ public class TDLInterface {
         return writeSingleLnCmd(msg);
     }
     
-    
+    public boolean checkExistMember(String radioId,String profileName) {
+        for (int i = 0; i < members.size(); i++) {
+            MemberProfile member = members.get(i);
+            if(member.getRadioId().equals(radioId)&&member.getProfileName().equals(profileName)) {
+                return true;
+            }
+        }
+        return false;
+    }
     
     
     public boolean writeSingleLnCmd(String cmd) {
@@ -696,11 +722,24 @@ public class TDLInterface {
                 while (isThreadAlive) {
                     if (TDLMessageHandler.rxStack.size() > 0) {
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
-                        //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
+                        System.out.println("Received message from: "+rxMsg.getProfileId());
                         byte msgType = rxMsg.getMsgType();
+                        byte[] data = rxMsg.getMsg();
+                        
                         if(msgType==(byte) 49) {
                             //receive message is position report
-                            
+                            System.out.println("Received position report from "+rxMsg.getProfileId());
+                            PPLI rcvPPLI = TDLMessageHandler.bytestoPPLI(data);
+                            rcvPPLI.setPosId(rxMsg.getFromId());
+                            rcvPPLI.setPosName(rxMsg.getProfileId());
+                            memberTracks.add(rcvPPLI);
+                            System.out.println("Lat: "+rcvPPLI.getPosLat()+",Lon: "+rcvPPLI.getPosLon());
+                            if(!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
+                                MemberProfile newMember = new MemberProfile();
+                                newMember.setRadioId(rcvPPLI.getPosId());
+                                newMember.setProfileName(rcvPPLI.getPosName());
+                                members.add(newMember);
+                            }
                         }
                     }
                     Thread.sleep(100);
@@ -715,6 +754,40 @@ public class TDLInterface {
         }
     }
 
+    public class SimulateRadioThread extends Thread {
+        private volatile boolean isThreadAlive = true;
+        private PPLI simPosition;
+        
+        
+        public SimulateRadioThread(PPLI simPosition) {
+            this.simPosition = simPosition;
+            
+        }
+        
+        @Override
+        public void run() {
+            try {
+                while (isThreadAlive) {
+                    
+                    double newLat = this.simPosition.getPosLat()+Math.random()*2-1;
+                    double newLon = this.simPosition.getPosLon()+Math.random()*2-1;
+                    
+                    this.simPosition.setPosLat(newLat);
+                    this.simPosition.setPosLon(newLon);
+                    
+                    byte[] ppliBytes = TDLMessageHandler.pplitobytes(this.simPosition);
+                    
+                    TDLMessage msg = new TDLMessage(this.simPosition.getPosName(),this.simPosition.getPosId(), null, null, (byte) 49, ppliBytes);
+                    TDLMessageHandler.SimFraming(msg);
+                    
+                    Thread.sleep(posreportRate*1000);
+                }
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+    }
+    }
+    
     class PositionReportThread extends Thread {
 
         private volatile boolean isThreadAlive = true;
@@ -726,10 +799,10 @@ public class TDLInterface {
                     if (ownTrack.size() > 0) {
                         PPLI txPPLI = ownTrack.getLast();
                         byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
-                        TDLMessage msg = new TDLMessage(ownRadioId, null, null, (byte) 49, ppliBytes);
+                        TDLMessage msg = new TDLMessage(ownprofileId,ownRadioId, null, null, (byte) 49, ppliBytes);
                         TDLMessageHandler.constructFrame(msg);
                     }
-                    Thread.sleep(posreportRate);
+                    Thread.sleep(posreportRate*1000);
                 }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
@@ -789,7 +862,7 @@ public class TDLInterface {
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
-                                TDLMessageHandler.deFraming(scannedInput.getBytes());
+                                //TDLMessageHandler.deFraming(scannedInput.getBytes());
                             }
                         }
                     } catch (IOException e) {
@@ -800,5 +873,7 @@ public class TDLInterface {
             }
         }
     }
+    
+    
 
 }
