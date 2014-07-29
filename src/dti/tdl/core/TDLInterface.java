@@ -922,7 +922,7 @@ public class TDLInterface {
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
-                                //TDLMessageHandler.deFraming(scannedInput.getBytes());
+                                TDLMessageHandler.deFraming(scannedInput.getBytes());
                             }
                         }
                     } catch (IOException e) {
