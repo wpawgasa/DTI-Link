@@ -271,7 +271,42 @@ public class TDLInterface {
 
                                 if (checkRadioStatus()) {
                                     retSetup.getSetupProfile().setRadioId(ownRadioId);
+                                    //Enable GPS
 
+                                    if (setup_profile.getGpsprofile().isGpsenabled()) {
+
+                                        //set gps mode
+                                        Thread.sleep(1000);
+                                        if (!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
+                                            break;
+                                        }
+                                        //enable gps report message
+                                        Thread.sleep(1000);
+                                        if (!setNMEAOUT(1)) {
+                                            break;
+                                        }
+                                        //set gps update rate
+                                        Thread.sleep(1000);
+                                        if (!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
+                                            break;
+                                        }
+                                        //set gps report rate
+                                        posreportRate = setup_profile.getGpsprofile().getGpsreport();
+                                        //start position report
+
+                                    } else {
+                                        Thread.sleep(1000);
+                                        if (!setGPSMode(0)) {
+                                            break;
+                                        }
+
+                                        Thread.sleep(1000);
+                                        if (!setNMEAOUT(0)) {
+                                            break;
+                                        }
+
+                                    }
+                                    
                                     //Select channel
                                     Thread.sleep(1000);
                                     if (!selectRadioChannel(1)) {
@@ -332,41 +367,7 @@ public class TDLInterface {
                                             break;
                                         }
                                     }
-                                    //Enable GPS
-
-                                    if (setup_profile.getGpsprofile().isGpsenabled()) {
-
-                                        //set gps mode
-                                        Thread.sleep(1000);
-                                        if (!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
-                                            break;
-                                        }
-                                        //enable gps report message
-                                        Thread.sleep(1000);
-                                        if (!setNMEAOUT(1)) {
-                                            break;
-                                        }
-                                        //set gps update rate
-                                        Thread.sleep(1000);
-                                        if (!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
-                                            break;
-                                        }
-                                        //set gps report rate
-                                        posreportRate = setup_profile.getGpsprofile().getGpsreport();
-                                        //start position report
-
-                                    } else {
-                                        Thread.sleep(1000);
-                                        if (!setGPSMode(0)) {
-                                            break;
-                                        }
-
-                                        Thread.sleep(1000);
-                                        if (!setNMEAOUT(0)) {
-                                            break;
-                                        }
-
-                                    }
+                                    
 
                                     //Calculate max message bytes
                                     double slottime = (double) setup_profile.getRadioprofile().getSlottime();
