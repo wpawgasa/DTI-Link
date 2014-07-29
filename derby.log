@@ -1,13 +1,18 @@
 ----------------------------------------------------------------
+<<<<<<< HEAD
 Tue Jul 29 17:29:41 ICT 2014:
 Booting Derby version The Apache Software Foundation - Apache Derby - 10.10.1.3 - (1557168): instance a816c00e-0147-81ab-2029-00001fd995c8 
+=======
+Tue Jul 29 17:16:27 ICT 2014:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.10.1.3 - (1557168): instance a816c00e-0147-819f-017d-000003eac858 
+>>>>>>> cdd82ff64dfeace59314ec3c0a7d677b95afeacd
 on database directory C:\Users\Administrator\Documents\GitHub\DTI-Link\tdldb with class loader sun.misc.Launcher$AppClassLoader@7ea987ac 
 Loaded from file:/C:/Users/Administrator/Documents/GitHub/DTI-Link/lib/JAVADB_DRIVER_LABEL/derby.jar
 java.vendor=Oracle Corporation
 java.runtime.version=1.8.0_05-b13
 user.dir=C:\Users\Administrator\Documents\GitHub\DTI-Link
-os.name=Windows 7
+os.name=Windows 8.1
 os.arch=amd64
-os.version=6.1
+os.version=6.3
 derby.system.home=null
 Database Class Loader started - derby.database.classpath=''
