@@ -701,6 +701,7 @@ public class TDLInterface {
                         try {
                             outputStream.write(txFrame);
                             outputStream.flush();
+                            System.out.println("Transmit message: "+txFrame.toString());
 
                         } catch (Exception ex) {
                             Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
