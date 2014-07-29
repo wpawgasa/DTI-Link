@@ -28,7 +28,10 @@ import gnu.io.SerialPortEventListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -50,20 +53,21 @@ public class TDLInterface {
     public LinkedList<PPLI> ownTrack = new LinkedList<PPLI>();
     public LinkedList<PPLI> memberTracks = new LinkedList<PPLI>();
     public List<MemberProfile> members = new ArrayList<MemberProfile>();
-    
+
     public String ownRadioId;
     public String ownprofileId;
     public TransmitThread txT;
     public ReceiveThread rxT;
     public PositionReportThread reportT;
     public SimulateRadioThread simT;
+    public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
-    
+
     public TDLInterface() {
         db = new EmbeddedDB();
         conn = new TDLConnection();
-        
+
         setupServer();
     }
 
@@ -233,7 +237,7 @@ public class TDLInterface {
                                 if (!conn.connect()) {
                                     retConn.setMsg_err(conn.errMsg);
                                 } else {
-                                    
+
                                     inputStream = conn.getSerialInputStream();
                                     outputStream = conn.getSerialOutputStream();
                                     conn.setPortListener(new TDLInterface.portListener());
@@ -255,122 +259,120 @@ public class TDLInterface {
                                 retSetup.setSetupProfile(setup_profile);
                                 //check if radio in cmd mode
                                 //loop until radio is free from cmd mode
-                                while(TDLMessageHandler.isCmdMode) {
+                                while (TDLMessageHandler.isCmdMode) {
                                     Thread.sleep(200);
                                 }
                                 //Thread.sleep(10000);
                                 //Put radio into cmd mode after radio is free
                                 startCmdMode();
-                                
+
                                 Thread.sleep(1000);
                                 //check radio status
-                                
-                                if(checkRadioStatus()) {
+
+                                if (checkRadioStatus()) {
                                     retSetup.getSetupProfile().setRadioId(ownRadioId);
-                                    
+
                                     //Select channel
                                     Thread.sleep(1000);
-                                    if(!selectRadioChannel(1)) {
+                                    if (!selectRadioChannel(1)) {
                                         break;
                                     }
-                                    
+
                                     //Set frequency
                                     Thread.sleep(1000);
-                                    if(!setRadioFreq(setup_profile.getRadioprofile().getFrequency())) {
+                                    if (!setRadioFreq(setup_profile.getRadioprofile().getFrequency())) {
                                         break;
                                     }
-                                    
+
                                     //Set power output
                                     Thread.sleep(1000);
-                                    if(!setRadioPwr(setup_profile.getRadioprofile().getPower())) {
+                                    if (!setRadioPwr(setup_profile.getRadioprofile().getPower())) {
                                         break;
                                     }
-                                    
+
                                     //Set ota baud
                                     Thread.sleep(1000);
-                                    if(!setOTABaud(setup_profile.getRadioprofile().getOtabaud())) {
+                                    if (!setOTABaud(setup_profile.getRadioprofile().getOtabaud())) {
                                         break;
                                     }
-                                    
+
                                     //Set slot time
                                     Thread.sleep(1000);
-                                    if(!setSlottime(setup_profile.getRadioprofile().getSlottime())) {
+                                    if (!setSlottime(setup_profile.getRadioprofile().getSlottime())) {
                                         break;
                                     }
-                                    
+
                                     //Set frame time
                                     Thread.sleep(1000);
-                                    if(!setTDMAtime(setup_profile.getRadioprofile().getFrametime())) {
+                                    if (!setTDMAtime(setup_profile.getRadioprofile().getFrametime())) {
                                         break;
                                     }
-                                    
-                                    
+
                                     //set nmeamask
                                     Thread.sleep(1000);
-                                    if(!setNMEAMASK(256)) {
+                                    if (!setNMEAMASK(256)) {
                                         break;
                                     }
-                                    
+
                                     //disable WMX
                                     Thread.sleep(1000);
-                                    if(!setWMX(0)) {
+                                    if (!setWMX(0)) {
                                         break;
                                     }
-                                        
+
                                     //Set key
                                     Thread.sleep(1000);
-                                    if(!setup_profile.getMissionkey().equals("")) {
-                                        
-                                        if(!setKEY(setup_profile.getMissionkey())) {
+                                    if (!setup_profile.getMissionkey().equals("")) {
+
+                                        if (!setKEY(setup_profile.getMissionkey())) {
                                             break;
                                         }
                                     } else {
-                                        if(!setKEY("0")) {
+                                        if (!setKEY("0")) {
                                             break;
                                         }
                                     }
                                     //Enable GPS
-                                    
-                                    if(setup_profile.getGpsprofile().isGpsenabled()) {
-                                        
+
+                                    if (setup_profile.getGpsprofile().isGpsenabled()) {
+
                                         //set gps mode
                                         Thread.sleep(1000);
-                                        if(!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
+                                        if (!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
                                             break;
                                         }
                                         //enable gps report message
                                         Thread.sleep(1000);
-                                        if(!setNMEAOUT(1)) {
+                                        if (!setNMEAOUT(1)) {
                                             break;
                                         }
                                         //set gps update rate
                                         Thread.sleep(1000);
-                                        if(!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
+                                        if (!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
                                             break;
                                         }
                                         //set gps report rate
                                         posreportRate = setup_profile.getGpsprofile().getGpsreport();
                                         //start position report
-                                        
-                                        
+
                                     } else {
                                         Thread.sleep(1000);
-                                        if(!setGPSMode(0)) {
-                                            break;
-                                        } 
-                                        
-                                        Thread.sleep(1000);
-                                        if(!setNMEAOUT(0)) {
+                                        if (!setGPSMode(0)) {
                                             break;
                                         }
-                                        
+
+                                        Thread.sleep(1000);
+                                        if (!setNMEAOUT(0)) {
+                                            break;
+                                        }
+
                                     }
-                                    
+
                                     //Calculate max message bytes
-                                    double slottime = (double)setup_profile.getRadioprofile().getSlottime();
+                                    double slottime = (double) setup_profile.getRadioprofile().getSlottime();
                                     int ota = setup_profile.getRadioprofile().getOtabaud();
                                     double bitrate = 0;
-                                    switch(ota) {
+                                    switch (ota) {
                                         case 3:
                                             bitrate = 4800;
                                             break;
@@ -384,37 +386,37 @@ public class TDLInterface {
                                             bitrate = 9600;
                                             break;
                                     }
-                                    
-                                    TDLMessageHandler.messageMaxBytes = Math.floor(slottime*bitrate*0.001/8)-TDLMessageHandler.messageOverheadBytes;
-                                    
+
+                                    TDLMessageHandler.messageMaxBytes = Math.floor(slottime * bitrate * 0.001 / 8) - TDLMessageHandler.messageOverheadBytes;
+
                                 } else {
                                     radioErr = "Radio Offline";
                                 }
-                                
+
                                 retSetup.setMsg_err(radioErr);
-                                
-                                
+
                                 Thread.sleep(1000);
                                 quitCmdMode();
-                                
+
                                 //Start position report thread
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
-                                
+
                                 PPLI simRadio1 = new PPLI();
-                                simRadio1.setPosId("0002");
-                                simRadio1.setPosName("Mem2");
+                                simRadio1.setPosId("0099");
+                                simRadio1.setPosName("MemT");
                                 simRadio1.setPosLat(13.910016);
                                 simRadio1.setPosLon(100.550662);
                                 simRadio1.setSpeed(0.0);
                                 simRadio1.setTrueCourse(0.0);
                                 simRadio1.setMagVariation(0.0);
-                                simRadio1.setPosDate("072814");
-                                simRadio1.setPosTime("000000");
-                                
+
                                 simT = new TDLInterface.SimulateRadioThread(simRadio1);
                                 simT.start();
-                                
+
+                                checkStatT = new TDLInterface.CheckingMemberStatusThread();
+                                checkStatT.start();
+
                                 retSetup.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
                                 break;
@@ -425,10 +427,10 @@ public class TDLInterface {
                             case "request own position":
                                 UIResPPLIMessage retOwnPPLI = new UIResPPLIMessage();
                                 retOwnPPLI.setMsg_name("response own position");
-                                if(ownTrack.size()>0) {
+                                if (ownTrack.size() > 0) {
                                     PPLI curr_own_pos = ownTrack.getLast();
                                     retOwnPPLI.getTracks().add(curr_own_pos);
-                                } 
+                                }
                                 this.setReturnMsg(mapper.writeValueAsString(retOwnPPLI));
                                 break;
                             case "request own track":
@@ -436,11 +438,11 @@ public class TDLInterface {
                             case "request members":
                                 UIResMembersMessage retMembers = new UIResMembersMessage();
                                 retMembers.setMsg_name("response members");
-                                if(members.size()>0) {
+                                if (members.size() > 0) {
                                     retMembers.setMembers(members);
-                                } 
+                                }
                                 this.setReturnMsg(mapper.writeValueAsString(retMembers));
-                                
+
                                 break;
                             case "request member record":
                                 break;
@@ -468,77 +470,78 @@ public class TDLInterface {
         }
     }
 
-    private void startCmdMode() {                                            
+    private void startCmdMode() {
         // TODO add your handling code here:
         String msg = "+++";
         System.out.println("start cmd");
         try {
-            
+
             outputStream.write(msg.getBytes());
             outputStream.flush();
             TDLMessageHandler.isCmdMode = true;
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }      
-    private void quitCmdMode() {                                            
+    }
+
+    private void quitCmdMode() {
         // TODO add your handling code here:
         String msg = "ATCN";
         System.out.println("exit cmd");
         try {
-            
+
             outputStream.write(msg.getBytes());
-            outputStream.write((byte)13);
+            outputStream.write((byte) 13);
             outputStream.flush();
             TDLMessageHandler.isCmdMode = false;
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-    }      
+    }
+
     public boolean checkRadioStatus() {
         String msg = "ATMY";
         System.out.println("check radio");
         int maxWaitingCount = 5;
-        
+
         try {
             TDLMessageHandler.cmdReqStack.add(msg);
             outputStream.write(msg.getBytes());
-            outputStream.write((byte)13);
+            outputStream.write((byte) 13);
             outputStream.flush();
             int waitingCount = 0;
-            while(TDLMessageHandler.cmdResStack.size()<=0&&waitingCount<maxWaitingCount) {
-            Thread.sleep(500);
-            waitingCount++;
+            while (TDLMessageHandler.cmdResStack.size() <= 0 && waitingCount < maxWaitingCount) {
+                Thread.sleep(500);
+                waitingCount++;
             }
-            
-            if(TDLMessageHandler.cmdResStack.size()>0) {
+
+            if (TDLMessageHandler.cmdResStack.size() > 0) {
                 String cmdRes = null;
                 String endRes = "";
                 String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
-                while(TDLMessageHandler.cmdResStack.size()>0) {
+                while (TDLMessageHandler.cmdResStack.size() > 0) {
                     //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
                     //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                     System.out.println(cmdRes);
-                    if(cmdRes.equals(cmdReq)) {
+                    if (cmdRes.equals(cmdReq)) {
                         cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                         System.out.println(cmdRes);
                         ownRadioId = cmdRes;
-                        
+
                     }
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                    if(cmdRes.equals("OK")) {
+                    if (cmdRes.equals("OK")) {
                         System.out.println(cmdRes);
                         return true;
                     }
-                    
-                    
+
                 }
-                
+
                 //System.out.println(cmdRes.toString());
             }
-            
+
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (InterruptedException ex) {
@@ -546,153 +549,140 @@ public class TDLInterface {
         }
         return false;
     }
-    
+
     public boolean selectRadioChannel(int channel) {
-        String msg = "ATHP "+channel;
-        
-        
+        String msg = "ATHP " + channel;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setRadioFreq(double frequency) {
-        String msg = "ATFX "+frequency;
-        
-        
+        String msg = "ATFX " + frequency;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setRadioPwr(int power) {
-        String msg = "ATPO "+power;
-        
-        
+        String msg = "ATPO " + power;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setGPSMode(int mode) {
-        String msg = "GPS "+mode;
-        
-        
+        String msg = "GPS " + mode;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setNMEAOUT(int isEnabled) {
-        String msg = "NMEAOUT "+isEnabled;
-        
-        
+        String msg = "NMEAOUT " + isEnabled;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setNMEAMASK(int mask) {
-        String msg = "NMEAMASK "+mask;
-        
-        
+        String msg = "NMEAMASK " + mask;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setKEY(String key) {
-        String msg = "KEYPHRASE "+key;
-        
-        
+        String msg = "KEYPHRASE " + key;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setOTABaud(int rate) {
-        String msg = "ATR2 "+rate;
-        
-        
+        String msg = "ATR2 " + rate;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setSlottime(int time) {
-        String msg = "SLOTTIME "+time;
-        
-        
+        String msg = "SLOTTIME " + time;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setTDMAtime(int time) {
-        String msg = "TDMATIME "+time;
-        
-        
+        String msg = "TDMATIME " + time;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setWMX(int isEnabled) {
-        String msg = "WMX "+isEnabled;
-        
-        
+        String msg = "WMX " + isEnabled;
+
         return writeSingleLnCmd(msg);
     }
-    
+
     public boolean setGPSUpdate(int frequency) {
-        String msg = "NMEARATE "+frequency;
-        
-        
+        String msg = "NMEARATE " + frequency;
+
         return writeSingleLnCmd(msg);
     }
-    
-    public boolean checkExistMember(String radioId,String profileName) {
+
+    public boolean checkExistMember(String radioId, String profileName) {
         for (int i = 0; i < members.size(); i++) {
             MemberProfile member = members.get(i);
-            if(member.getRadioId().equals(radioId)&&member.getProfileName().equals(profileName)) {
+            if (member.getRadioId().equals(radioId) && member.getProfileName().equals(profileName)) {
                 return true;
             }
         }
         return false;
     }
- 
-    public MemberProfile findMember(String radioId,String profileName) {
+
+    public MemberProfile findMember(String radioId, String profileName) {
         for (int i = 0; i < members.size(); i++) {
             MemberProfile member = members.get(i);
-            if(member.getRadioId().equals(radioId)&&member.getProfileName().equals(profileName)) {
+            if (member.getRadioId().equals(radioId) && member.getProfileName().equals(profileName)) {
                 return member;
             }
         }
         return null;
     }
-    
+
     public boolean writeSingleLnCmd(String cmd) {
         String msg = cmd;
         System.out.println("write cmd");
         int maxWaitingCount = 5;
-        
+
         try {
             TDLMessageHandler.cmdReqStack.add(msg);
             outputStream.write(msg.getBytes());
-            outputStream.write((byte)13);
+            outputStream.write((byte) 13);
             outputStream.flush();
             int waitingCount = 0;
-            while(TDLMessageHandler.cmdResStack.size()<=0&&waitingCount<maxWaitingCount) {
-            Thread.sleep(500);
-            waitingCount++;
+            while (TDLMessageHandler.cmdResStack.size() <= 0 && waitingCount < maxWaitingCount) {
+                Thread.sleep(500);
+                waitingCount++;
             }
-            
-            if(TDLMessageHandler.cmdResStack.size()>0) {
+
+            if (TDLMessageHandler.cmdResStack.size() > 0) {
                 String cmdRes = null;
                 String endRes = "";
                 String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
-                while(TDLMessageHandler.cmdResStack.size()>0) {
+                while (TDLMessageHandler.cmdResStack.size() > 0) {
                     //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
                     //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
-                    
+
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                    if(cmdRes.equals("OK")) {
+                    if (cmdRes.equals("OK")) {
                         return true;
                     }
-                    
-                    
+
                 }
-                
+
                 //System.out.println(cmdRes.toString());
             }
-            
+
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (InterruptedException ex) {
             Logger.getLogger(TDLInterface.class.getName()).log(Level.SEVERE, null, ex);
         }
-        radioErr = "Radio Cmd Error: "+msg;
+        radioErr = "Radio Cmd Error: " + msg;
         return false;
     }
 
@@ -739,19 +729,19 @@ public class TDLInterface {
                 while (isThreadAlive) {
                     if (TDLMessageHandler.rxStack.size() > 0) {
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
-                        System.out.println("Received message from: "+rxMsg.getProfileId());
+                        System.out.println("Received message from: " + rxMsg.getProfileId());
                         byte msgType = rxMsg.getMsgType();
                         byte[] data = rxMsg.getMsg();
-                        
-                        if(msgType==(byte) 49) {
+
+                        if (msgType == (byte) 49) {
                             //receive message is position report
-                            System.out.println("Received position report from "+rxMsg.getProfileId());
+                            System.out.println("Received position report from " + rxMsg.getProfileId());
                             PPLI rcvPPLI = TDLMessageHandler.bytestoPPLI(data);
                             rcvPPLI.setPosId(rxMsg.getFromId());
                             rcvPPLI.setPosName(rxMsg.getProfileId());
                             memberTracks.add(rcvPPLI);
-                            System.out.println("Lat: "+rcvPPLI.getPosLat()+",Lon: "+rcvPPLI.getPosLon());
-                            if(!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
+                            System.out.println("Lat: " + rcvPPLI.getPosLat() + ",Lon: " + rcvPPLI.getPosLon());
+                            if (!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
                                 MemberProfile newMember = new MemberProfile();
                                 newMember.setRadioId(rcvPPLI.getPosId());
                                 newMember.setProfileName(rcvPPLI.getPosName());
@@ -779,39 +769,80 @@ public class TDLInterface {
     }
 
     public class SimulateRadioThread extends Thread {
+
         private volatile boolean isThreadAlive = true;
         private PPLI simPosition;
-        
-        
+
         public SimulateRadioThread(PPLI simPosition) {
             this.simPosition = simPosition;
-            
+
         }
-        
+
         @Override
         public void run() {
             try {
                 while (isThreadAlive) {
-                    
-                    double newLat = this.simPosition.getPosLat()+Math.random()*2-1;
-                    double newLon = this.simPosition.getPosLon()+Math.random()*2-1;
-                    
+
+                    double newLat = this.simPosition.getPosLat() + Math.random() * 0.5 - 0.25;
+                    double newLon = this.simPosition.getPosLon() + Math.random() * 0.5 - 0.25;
+                    DateFormat df = new SimpleDateFormat("MMddyyyy");
+                    DateFormat tf = new SimpleDateFormat("HHmmss");
+
+                    Date today = Calendar.getInstance().getTime();
+
+                    String reportDate = df.format(today);
+                    String reportTime = tf.format(today);
                     this.simPosition.setPosLat(newLat);
                     this.simPosition.setPosLon(newLon);
-                    
+                    this.simPosition.setPosDate(reportDate);
+                    this.simPosition.setPosTime(reportTime);
+
                     byte[] ppliBytes = TDLMessageHandler.pplitobytes(this.simPosition);
-                    
-                    TDLMessage msg = new TDLMessage(this.simPosition.getPosName(),this.simPosition.getPosId(), null, null, (byte) 49, ppliBytes);
+
+                    TDLMessage msg = new TDLMessage(this.simPosition.getPosName(), this.simPosition.getPosId(), null, null, (byte) 49, ppliBytes);
                     TDLMessageHandler.SimFraming(msg);
-                    
-                    Thread.sleep(posreportRate*1000);
+
+                    Thread.sleep(posreportRate * 1000);
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
     }
+
+    class CheckingMemberStatusThread extends Thread {
+
+        private volatile boolean isThreadAlive = true;
+
+        @Override
+        public void run() {
+            try {
+                while (isThreadAlive) {
+                    if (members.size() > 0) {
+                        Date now = new Date();
+                        for (int i = 0; i < members.size(); i++) {
+                            MemberProfile member = members.get(i);
+                            if (now.getTime() - member.getUpdateTime().getTime() > 10000) {
+                                member.setStatus(false);
+                            }
+                        }
+                    }
+                    Thread.sleep(8000);
+                }
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        public void kill() {
+            isThreadAlive = false;
+        }
+
+        public boolean isRunning() {
+            return isThreadAlive;
+        }
     }
-    
+
     class PositionReportThread extends Thread {
 
         private volatile boolean isThreadAlive = true;
@@ -823,18 +854,20 @@ public class TDLInterface {
                     if (ownTrack.size() > 0) {
                         PPLI txPPLI = ownTrack.getLast();
                         byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
-                        TDLMessage msg = new TDLMessage(ownprofileId,ownRadioId, null, null, (byte) 49, ppliBytes);
+                        TDLMessage msg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 49, ppliBytes);
                         TDLMessageHandler.constructFrame(msg);
                     }
-                    Thread.sleep(posreportRate*1000);
+                    Thread.sleep(posreportRate * 1000);
                 }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         }
+
         public void kill() {
             isThreadAlive = false;
         }
+
         public boolean isRunning() {
             return isThreadAlive;
         }
@@ -871,8 +904,8 @@ public class TDLInterface {
                         //displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
                         System.out.println(TDLMessageHandler.isCmdMode);
                         if (TDLMessageHandler.isCmdMode) {
-                            
-                            if(TDLMessageHandler.cmdReqStack.size()>0) {
+
+                            if (TDLMessageHandler.cmdReqStack.size() > 0) {
                                 TDLMessageHandler.cmdResStack.add(scannedInput);
                             }
                         } else {
@@ -897,7 +930,5 @@ public class TDLInterface {
             }
         }
     }
-    
-    
 
 }

@@ -355,7 +355,7 @@ public class TestTDL extends javax.swing.JFrame {
     private void sendMsgBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendMsgBtnActionPerformed
         // TODO add your handling code here:
         
-        TDLMessage msg = new TDLMessage(null, null, null, (byte) 2, msgText.getText().getBytes());
+        TDLMessage msg = new TDLMessage(null, null, null, null,(byte) 2, msgText.getText().getBytes());
         TDLMessageHandler.constructFrame(msg);
 //        try {
 //            outputStream.write(msg.getBytes());

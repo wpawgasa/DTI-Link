@@ -65,7 +65,7 @@ public class TDLMessageHandler {
             }
         }
 
-        if (startIdx == -1 || endIdx == -1) {
+        if (startIdx == -1 || endIdx == -1 || endMsgIdx<startMsgIdx || endIdx<startMsgIdx || endIdx<endMsgIdx) {
             String err = "Corrupted Message: invalid frame";
             TDLMessage rxMsg = new TDLMessage(null, null, null, null, (byte) 48, err.getBytes());
             rxStack.add(rxMsg);
