@@ -785,7 +785,7 @@ public class TDLInterface {
 
                     double newLat = this.simPosition.getPosLat() + Math.random() * 0.5 - 0.25;
                     double newLon = this.simPosition.getPosLon() + Math.random() * 0.5 - 0.25;
-                    DateFormat df = new SimpleDateFormat("MMddyyyy");
+                    DateFormat df = new SimpleDateFormat("MMddyy");
                     DateFormat tf = new SimpleDateFormat("HHmmss");
 
                     Date today = Calendar.getInstance().getTime();
@@ -915,6 +915,7 @@ public class TDLInterface {
                                 System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
                                 ppli.setPosId(ownRadioId);
                                 ppli.setPosName(ownprofileId);
+                                
                                 ownTrack.add(ppli);
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }

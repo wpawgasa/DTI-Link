@@ -8,7 +8,11 @@ package dti.tdl.messaging;
 import com.google.common.primitives.Longs;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -65,7 +69,7 @@ public class TDLMessageHandler {
             }
         }
 
-        if (startIdx == -1 || endIdx == -1 || endMsgIdx<startMsgIdx || endIdx<startMsgIdx || endIdx<endMsgIdx) {
+        if (startIdx == -1 || endIdx == -1 || endMsgIdx < startMsgIdx || endIdx < startMsgIdx || endIdx < endMsgIdx || startMsgIdx < startIdx) {
             String err = "Corrupted Message: invalid frame";
             TDLMessage rxMsg = new TDLMessage(null, null, null, null, (byte) 48, err.getBytes());
             rxStack.add(rxMsg);
@@ -136,7 +140,7 @@ public class TDLMessageHandler {
 
         return ppliBytes;
     }
-    
+
     public static PPLI bytestoPPLI(byte[] data) {
         PPLI decodedPPLI = new PPLI();
         byte[] ppliDblBytes = Arrays.copyOfRange(data, 0, 40);
@@ -148,7 +152,7 @@ public class TDLMessageHandler {
         decodedPPLI.setMagVariation(ppliDouble[4]);
         decodedPPLI.setPosDate(Arrays.copyOfRange(data, 40, 46).toString());
         decodedPPLI.setPosTime(Arrays.copyOfRange(data, 46, 52).toString());
-        
+
         return decodedPPLI;
     }
 
@@ -346,9 +350,15 @@ public class TDLMessageHandler {
         if (!posValues[9].isEmpty()) {
             posMV = Double.parseDouble(posValues[9]);
         }
+        DateFormat df = new SimpleDateFormat("MMddyy");
+        DateFormat tf = new SimpleDateFormat("HHmmss");
 
-        pos.setPosDate(posDate);
-        pos.setPosTime(posTime);
+        Date today = Calendar.getInstance().getTime();
+
+        String reportDate = df.format(today);
+        String reportTime = tf.format(today);
+        pos.setPosDate(reportDate);
+        pos.setPosTime(reportTime);
         pos.setPosLat(posLat);
         pos.setPosLon(posLon);
         pos.setTrueCourse(posTC);
