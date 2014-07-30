@@ -11,6 +11,7 @@ import dti.tdl.communication.RadioProfile;
 import dti.tdl.communication.TDLConnection;
 import dti.tdl.communication.UserProfile;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -20,6 +21,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -426,6 +429,9 @@ public class EmbeddedDB {
                 
                 String profileName = rs.getString("PROFILE_NAME");
                 //String commport = rs.getString("COMMPORT");
+                if(profileId==1) {
+                    profileName = InetAddress.getLocalHost().getHostName().substring(0, 8);
+                }
                 profile.setProfileName(profileName);
                 profile.setProfileId(rs.getInt("PROFID"));
                 connProfile.setComm_port(rs.getString("COMMPORT"));
@@ -453,6 +459,8 @@ public class EmbeddedDB {
             ex.printStackTrace();
             isDBError = true;
             DBError = ex.getMessage();
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(EmbeddedDB.class.getName()).log(Level.SEVERE, null, ex);
         }
         return profile;
     }

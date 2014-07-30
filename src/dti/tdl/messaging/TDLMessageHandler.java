@@ -42,6 +42,13 @@ public class TDLMessageHandler {
         int endMsgIdx = -1;
 //        try {
         String rxMsgT = new String(bytes);
+        
+        String rcvStr = "Rx Frame: ";
+            for (int j = 0; j < bytes.length; j++) {
+                rcvStr = rcvStr+" "+(int) bytes[j];
+                
+            }
+            System.out.println(rcvStr);
 //            System.out.println(rxMsgT);
 //            System.out.println(size);
 //        } catch (UnsupportedEncodingException ex) {
@@ -52,19 +59,24 @@ public class TDLMessageHandler {
 //        }
         for (int i = 0; i < size; i++) {
             if (bytes[i] == (byte) 1) {
-                startIdx = i;
-
+                if(startIdx==-1)
+                    startIdx = i;
+                
             }
+            
             if (bytes[i] == (byte) 2) {
-                startMsgIdx = i;
+                if(startMsgIdx==-1)
+                    startMsgIdx = i;
 
             }
             if (bytes[i] == (byte) 3) {
-                endMsgIdx = i;
+                if(endMsgIdx==-1)
+                    endMsgIdx = i;
 
             }
             if (bytes[i] == (byte) 4) {
-                endIdx = i;
+                if(endIdx==-1)
+                    endIdx = i;
 
             }
         }
@@ -96,18 +108,19 @@ public class TDLMessageHandler {
         //System.out.println(checksum.toString());
         //System.out.println(newChecksum);
         //System.out.println(receiveChecksum);
-        if (newChecksum != receiveChecksum) {
-            String err = "Corrupted Message: checksum not matched";
-            TDLMessage rxMsgObj = new TDLMessage(profileId.toString(), fromId.toString(), toId.toString(), null, (byte) 48, err.getBytes());
-            rxStack.add(rxMsgObj);
-            return;
-        }
         String profileStr = new String(profileId);
         String fromStr = "";
         for (int i = 0; i < fromId.length; i++) {
             int fromBI = (int) fromId[i];
             fromStr = fromStr + String.format("%02x", Byte.parseByte(Integer.toString(fromBI)));
         }
+        if (newChecksum != receiveChecksum) {
+            String err = "Corrupted Message: checksum not matched";
+            TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, (byte) 48, err.getBytes());
+            rxStack.add(rxMsgObj);
+            return;
+        }
+        
         TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, msgType[0], msg);
         rxStack.add(rxMsgObj);
 //        } catch (UnsupportedEncodingException ex) {
@@ -150,8 +163,8 @@ public class TDLMessageHandler {
         decodedPPLI.setSpeed(ppliDouble[2]);
         decodedPPLI.setTrueCourse(ppliDouble[3]);
         decodedPPLI.setMagVariation(ppliDouble[4]);
-        decodedPPLI.setPosDate(Arrays.copyOfRange(data, 40, 46).toString());
-        decodedPPLI.setPosTime(Arrays.copyOfRange(data, 46, 52).toString());
+        decodedPPLI.setPosDate(new String(Arrays.copyOfRange(data, 40, 46)));
+        decodedPPLI.setPosTime(new String(Arrays.copyOfRange(data, 46, 52)));
 
         return decodedPPLI;
     }
@@ -161,7 +174,7 @@ public class TDLMessageHandler {
         byte[] startMsg = {(byte) 2};
         byte[] endMsg = {(byte) 3};
         byte[] end = {(byte) 4};
-        byte[] profile = message.getProfileId().getBytes(); //4 bytes profile id
+        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); //4 bytes profile id
         byte[] msgType = {message.getMsgType()}; // 1 byte message type
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
@@ -179,7 +192,13 @@ public class TDLMessageHandler {
         long checksum = CRC32Checksum(data);
 
         byte[] checksumBytes = Longs.toByteArray(checksum);
-
+        System.out.println("checksum len = "+checksumBytes.length);
+        String checksumStr = "Checksum: ";
+            for (int j = 0; j < checksumBytes.length; j++) {
+                checksumStr = checksumStr+" "+(int) checksumBytes[j];
+                
+            }
+            System.out.println(checksumStr);
         byte[] frame = null;
         int msgLength = data.length;
         int msgIdx = 0;
@@ -215,7 +234,16 @@ public class TDLMessageHandler {
                 }
             }
             txMsg = builder.toString();
-
+            
+            String[] txBytesStrArray = txMsg.split(",");
+            byte[] txBytes = new byte[txBytesStrArray.length];
+            //String frameMsg = "Frame content (before): ";
+            for (int j = 0; j < txBytesStrArray.length; j++) {
+                int byteInt = Integer.parseInt(txBytesStrArray[j]);
+                //frameMsg = frameMsg+" "+byteInt;
+                txBytes[j] = (byte) byteInt;
+            }
+            //System.out.println(frameMsg);
             txStack.add(txMsg);
         }
     }
@@ -225,7 +253,7 @@ public class TDLMessageHandler {
         byte[] startMsg = {(byte) 2};
         byte[] endMsg = {(byte) 3};
         byte[] end = {(byte) 4};
-        byte[] profile = message.getProfileId().getBytes(); //4 bytes profile id
+        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); //4 bytes profile id
         byte[] msgType = {message.getMsgType()}; // 1 byte message type
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
@@ -282,10 +310,13 @@ public class TDLMessageHandler {
 
             String[] txBytesStrArray = txMsg.split(",");
             byte[] txBytes = new byte[txBytesStrArray.length];
+            //String frameMsg = "Sim Frame content (before): ";
             for (int j = 0; j < txBytesStrArray.length; j++) {
                 int byteInt = Integer.parseInt(txBytesStrArray[j]);
+                //frameMsg = frameMsg+" "+byteInt;
                 txBytes[j] = (byte) byteInt;
             }
+            //System.out.println(frameMsg);
             TDLMessageHandler.deFraming(txBytes);
 
         }
@@ -295,10 +326,13 @@ public class TDLMessageHandler {
         String txBytesStr = txStack.removeFirst();
         String[] txBytesStrArray = txBytesStr.split(",");
         byte[] txBytes = new byte[txBytesStrArray.length];
-        for (int i = 0; i < txBytesStrArray.length; i++) {
-            int byteInt = Integer.parseInt(txBytesStrArray[i]);
-            txBytes[i] = (byte) byteInt;
-        }
+        String frameMsg = "Tx Frame content: ";
+            for (int j = 0; j < txBytesStrArray.length; j++) {
+                int byteInt = Integer.parseInt(txBytesStrArray[j]);
+                frameMsg = frameMsg+" "+byteInt;
+                txBytes[j] = (byte) byteInt;
+            }
+            System.out.println(frameMsg);
         return txBytes;
     }
 

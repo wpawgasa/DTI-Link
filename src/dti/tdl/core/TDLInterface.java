@@ -306,7 +306,7 @@ public class TDLInterface {
                                         }
 
                                     }
-                                    
+
                                     //Select channel
                                     Thread.sleep(1000);
                                     if (!selectRadioChannel(1)) {
@@ -367,7 +367,6 @@ public class TDLInterface {
                                             break;
                                         }
                                     }
-                                    
 
                                     //Calculate max message bytes
                                     double slottime = (double) setup_profile.getRadioprofile().getSlottime();
@@ -414,7 +413,6 @@ public class TDLInterface {
 
                                 simT = new TDLInterface.SimulateRadioThread(simRadio1);
                                 simT.start();
-
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
 
@@ -702,8 +700,8 @@ public class TDLInterface {
                         try {
                             outputStream.write(txFrame);
                             outputStream.flush();
-                            System.out.println("Transmit message: "+txFrame.toString());
-
+                            System.out.println("Transmit message: " + txFrame.toString());
+                            //TDLMessageHandler.deFraming(txFrame);
                         } catch (Exception ex) {
                             Logger.getLogger(TestTDL.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -756,6 +754,8 @@ public class TDLInterface {
                                 foundMember.setCurrPos(rcvPPLI);
                                 foundMember.setUpdateTime(new Date());
                             }
+                        } else if (msgType == (byte) 48) {
+                            System.out.println("Received corrupted message from " + rxMsg.getProfileId());
                         }
                     }
                     Thread.sleep(100);
@@ -803,6 +803,12 @@ public class TDLInterface {
 
                     TDLMessage msg = new TDLMessage(this.simPosition.getPosName(), this.simPosition.getPosId(), null, null, (byte) 49, ppliBytes);
                     TDLMessageHandler.SimFraming(msg);
+//                    if (ownTrack.size() > 0) {
+//                        PPLI txPPLI = ownTrack.getLast();
+//                        byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
+//                        TDLMessage msg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 49, ppliBytes);
+//                        TDLMessageHandler.SimFraming(msg);
+//                    }
 
                     Thread.sleep(posreportRate * 1000);
                 }
@@ -917,11 +923,15 @@ public class TDLInterface {
                                 System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
                                 ppli.setPosId(ownRadioId);
                                 ppli.setPosName(ownprofileId);
-                                
+
                                 ownTrack.add(ppli);
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
+                                byte[] rxinput = scannedInput.getBytes();
+                                for (int i = 0; i < rxinput.length; i++) {
+                                    System.out.println((int) rxinput[i]);;
+                                }
                                 TDLMessageHandler.deFraming(scannedInput.getBytes());
                             }
                         }
