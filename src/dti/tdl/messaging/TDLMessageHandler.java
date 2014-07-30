@@ -92,7 +92,7 @@ public class TDLMessageHandler {
         byte[] toId = {bytes[startIdx + 4], bytes[startIdx + 5]};
         byte[] profileId = {bytes[startIdx + 6], bytes[startIdx + 7], bytes[startIdx + 8], bytes[startIdx + 9]};
         //int checksumSize = startMsgIdx - startIdx+9;
-        byte[] checksum = Arrays.copyOfRange(bytes, startIdx + 10, startMsgIdx);
+        byte[] checksum = Arrays.copyOfRange(bytes, startIdx + 10, startIdx + 18);
         byte[] msg = Arrays.copyOfRange(bytes, startMsgIdx + 1, endMsgIdx);
         //try {
         //      String rxMsg = new String(msg);

@@ -928,10 +928,7 @@ public class TDLInterface {
                                 //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
                             }
                             if (scannedInput.charAt(0) == (char) 1) {
-                                byte[] rxinput = scannedInput.getBytes();
-                                for (int i = 0; i < rxinput.length; i++) {
-                                    System.out.println((int) rxinput[i]);;
-                                }
+                                
                                 TDLMessageHandler.deFraming(scannedInput.getBytes());
                             }
                         }
