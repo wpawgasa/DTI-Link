@@ -402,16 +402,16 @@ public class TDLInterface {
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
 
-//                                PPLI simRadio1 = new PPLI();
-//                                simRadio1.setPosId("0099");
-//                                simRadio1.setPosName("MemT");
-//                                simRadio1.setPosLat(13.910016);
-//                                simRadio1.setPosLon(100.550662);
-//                                simRadio1.setSpeed(0.0);
-//                                simRadio1.setTrueCourse(0.0);
-//                                simRadio1.setMagVariation(0.0);
-                                //simT = new TDLInterface.SimulateRadioThread(simRadio1);
-                                //simT.start();
+                                PPLI simRadio1 = new PPLI();
+                                simRadio1.setPosId("0099");
+                                simRadio1.setPosName("MemT");
+                                simRadio1.setPosLat(13.910016);
+                                simRadio1.setPosLon(100.550662);
+                                simRadio1.setSpeed(0.0);
+                                simRadio1.setTrueCourse(0.0);
+                                simRadio1.setMagVariation(0.0);
+                                simT = new TDLInterface.SimulateRadioThread(simRadio1);
+                                simT.start();
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
 
