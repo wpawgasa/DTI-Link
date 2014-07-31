@@ -402,17 +402,16 @@ public class TDLInterface {
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
 
-                                PPLI simRadio1 = new PPLI();
-                                simRadio1.setPosId("0099");
-                                simRadio1.setPosName("MemT");
-                                simRadio1.setPosLat(13.910016);
-                                simRadio1.setPosLon(100.550662);
-                                simRadio1.setSpeed(0.0);
-                                simRadio1.setTrueCourse(0.0);
-                                simRadio1.setMagVariation(0.0);
-
-                                simT = new TDLInterface.SimulateRadioThread(simRadio1);
-                                simT.start();
+//                                PPLI simRadio1 = new PPLI();
+//                                simRadio1.setPosId("0099");
+//                                simRadio1.setPosName("MemT");
+//                                simRadio1.setPosLat(13.910016);
+//                                simRadio1.setPosLon(100.550662);
+//                                simRadio1.setSpeed(0.0);
+//                                simRadio1.setTrueCourse(0.0);
+//                                simRadio1.setMagVariation(0.0);
+                                //simT = new TDLInterface.SimulateRadioThread(simRadio1);
+                                //simT.start();
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
 
@@ -517,24 +516,31 @@ public class TDLInterface {
             if (TDLMessageHandler.cmdResStack.size() > 0) {
                 String cmdRes = null;
                 String endRes = "";
-                String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
+                //String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
                 while (TDLMessageHandler.cmdResStack.size() > 0) {
                     //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
                     //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
                     System.out.println(cmdRes);
-                    if (cmdRes.equals(cmdReq)) {
-                        cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                        System.out.println(cmdRes);
-                        ownRadioId = cmdRes;
+                    String[] resStr = cmdRes.split("\r\n");
 
-                    }
-                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                    if (cmdRes.equals("OK")) {
-                        System.out.println(cmdRes);
+                    ownRadioId = resStr[1];
+                    if (resStr[2].equals("OK")) {
+                        System.out.println("ID OK");
                         return true;
                     }
+//                    if (cmdRes.equals(cmdReq)) {
+//                        cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+//                        System.out.println(cmdRes);
+//                        ownRadioId = cmdRes;
+//
+//                    }
+//                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+//                    if (cmdRes.equals("OK")) {
+//                        System.out.println(cmdRes);
+//                        return true;
+//                    }
 
                 }
 
@@ -660,15 +666,23 @@ public class TDLInterface {
             if (TDLMessageHandler.cmdResStack.size() > 0) {
                 String cmdRes = null;
                 String endRes = "";
-                String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
+                //String cmdReq = TDLMessageHandler.cmdReqStack.removeFirst();
                 while (TDLMessageHandler.cmdResStack.size() > 0) {
                     //cmdRes.append(TDLMessageHandler.cmdResStack.removeFirst());
                     //endRes = TDLMessageHandler.cmdResStack.removeFirst();
                     //System.out.println(TDLMessageHandler.cmdResStack.removeFirst());
 
+//                    cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
+//                    if (cmdRes.equals("OK")) {
+//                        return true;
+//                    }
                     cmdRes = TDLMessageHandler.cmdResStack.removeFirst();
-                    if (cmdRes.equals("OK")) {
-                        return true;
+//                    System.out.println(cmdRes);
+                    String[] resStr = cmdRes.split("\r\n");
+                    for (int i = 0; i < resStr.length; i++) {
+                        if (resStr[i].equals("OK")) {
+                            return true;
+                        }
                     }
 
                 }
@@ -835,7 +849,7 @@ public class TDLInterface {
                             }
                         }
                     }
-                    Thread.sleep(8000);
+                    Thread.sleep(60000);
                 }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
@@ -880,6 +894,7 @@ public class TDLInterface {
             return isThreadAlive;
         }
     }
+    public String tmpStr;
 
     public class portListener implements SerialPortEventListener {
 
@@ -897,46 +912,75 @@ public class TDLInterface {
                 case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
                     break;
                 case SerialPortEvent.DATA_AVAILABLE:
+                    //if (readBuffer.length() <= 0) {
                     StringBuilder readBuffer = new StringBuilder();
+                    //}
                     int c;
-                    byte[] b = {(byte) 1};
+                    int b;
                     try {
-                        while ((b[0] = (byte) inputStream.read()) != (byte) 10) {
-                            if (b[0] != (byte) 13) {
-                                System.out.println((int) b[0]);
-                                readBuffer.append(new String(b));
-                            }
+                        //while ((b = (byte) inputStream.read()) != (byte) 10) {
+                        //    if (b != (byte) 13) {
+                        while ((b = inputStream.read()) != -1) {
+
+                            //if (b != 13) {  
+                            //System.out.println((char) b);
+                            readBuffer.append(b + ",");
+                            //}
+
                         }
+                        System.out.println(readBuffer.charAt(readBuffer.length() - 2));
+                        //if (readBuffer.charAt(readBuffer.length() - 2) == (char) 10) {
+                        readBuffer.substring(0, readBuffer.length());
                         String scannedInput = readBuffer.toString();
+                        readBuffer = null;
+                        String[] rxBytesStrArray = scannedInput.split(",");
+                        byte[] rxBytes = new byte[rxBytesStrArray.length];
+                        String rxMsg = "";
+                        for (int j = 0; j < rxBytesStrArray.length; j++) {
+                            int byteInt = Integer.parseInt(rxBytesStrArray[j]);
+                            //frameMsg = frameMsg+" "+byteInt;
+                            rxBytes[j] = (byte) byteInt;
+                            rxMsg = rxMsg + (char) byteInt;
+                        }
                         timestamp = new java.util.Date().toString();
-                        System.out.println(timestamp + ": input received:" + scannedInput);
+                        System.out.println(timestamp + ": input received:" + rxMsg);
                         //displayArea.append(timestamp + ": input received:" + scannedInput + "\n");
                         System.out.println(TDLMessageHandler.isCmdMode);
                         if (TDLMessageHandler.isCmdMode) {
 
                             if (TDLMessageHandler.cmdReqStack.size() > 0) {
-                                TDLMessageHandler.cmdResStack.add(scannedInput);
+                                TDLMessageHandler.cmdResStack.add(rxMsg);
                             }
                         } else {
-                            if (scannedInput.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
-                                System.out.println(scannedInput.substring(0, 6));
-                                PPLI ppli = TDLMessageHandler.decodeOwnPosition(scannedInput);
-                                System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
-                                ppli.setPosId(ownRadioId);
-                                ppli.setPosName(ownprofileId);
+                            System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" + rxBytes[rxBytes.length - 1]);
+                            if ((int) rxBytes[rxBytes.length - 1] == 10) {
+//                                if(!tmpStr.equals("")) {
+//                                    rxMsg = tmpStr+rxMsg;
+//                                }
+                                if (rxMsg.substring(0, 6).equalsIgnoreCase("$GPRMC")) {
+                                    PPLI ppli = TDLMessageHandler.decodeOwnPosition(rxMsg);
+                                    System.out.println("own position: " + ppli.getPosLat() + ", " + ppli.getPosLon());
+                                    ppli.setPosId(ownRadioId);
+                                    ppli.setPosName(ownprofileId);
 
-                                ownTrack.add(ppli);
-                                //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
-                            }
-                            if (scannedInput.charAt(0) == (char) 1) {
-                                
-                                TDLMessageHandler.deFraming(scannedInput.getBytes());
+                                    ownTrack.add(ppli);
+                                    //currentPosition.setText(ppli.getPosLat()+", "+ppli.getPosLon());
+                                }
+                                tmpStr = "";
+                            } //else {
+                               // tmpStr = tmpStr+rxMsg;
+                            //}
+                            if ((int) rxBytes[rxBytes.length - 1] == 4) {
+                                if (rxMsg.charAt(0) == (char) 1) {
+
+                                    TDLMessageHandler.deFraming(rxBytes);
+                                }
                             }
                         }
+                        //}
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-
                     break;
             }
         }
