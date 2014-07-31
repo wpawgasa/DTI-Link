@@ -903,6 +903,7 @@ public class TDLInterface {
                     try {
                         while ((b[0] = (byte) inputStream.read()) != (byte) 10) {
                             if (b[0] != (byte) 13) {
+                                System.out.println((int) b[0]);
                                 readBuffer.append(new String(b));
                             }
                         }
