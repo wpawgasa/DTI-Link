@@ -70,12 +70,12 @@ public class TDLMessageHandler {
 
             }
             if (bytes[i] == (byte) 3) {
-                if(endMsgIdx==-1)
+                if(endMsgIdx==-1&&i>startIdx&&i>startMsgIdx)
                     endMsgIdx = i;
 
             }
             if (bytes[i] == (byte) 4) {
-                if(endIdx==-1)
+                if(endIdx==-1&&i>startIdx&&i>startMsgIdx&&i>endMsgIdx&&bytes[i-1]==(byte)3)
                     endIdx = i;
 
             }

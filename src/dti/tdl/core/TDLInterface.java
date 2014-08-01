@@ -801,6 +801,7 @@ public class TDLInterface {
                 }
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
+                this.kill();
             }
         }
 
