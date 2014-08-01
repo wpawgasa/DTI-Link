@@ -60,6 +60,8 @@ public class TDLInterface {
     public ReceiveThread rxT;
     public PositionReportThread reportT;
     public SimulateRadioThread simT;
+    public SimulateRadioThread simT2;
+    public SimulateRadioThread simT3;
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
@@ -402,16 +404,39 @@ public class TDLInterface {
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
 
-//                                PPLI simRadio1 = new PPLI();
-//                                simRadio1.setPosId("0099");
-//                                simRadio1.setPosName("MemT");
-//                                simRadio1.setPosLat(13.910016);
-//                                simRadio1.setPosLon(100.550662);
-//                                simRadio1.setSpeed(0.0);
-//                                simRadio1.setTrueCourse(0.0);
-//                                simRadio1.setMagVariation(0.0);
-                                //simT = new TDLInterface.SimulateRadioThread(simRadio1);
-                                //simT.start();
+                                PPLI simRadio1 = new PPLI();
+                                simRadio1.setPosId("0099");
+                                simRadio1.setPosName("MemT");
+                                simRadio1.setPosLat(13.910016);
+                                simRadio1.setPosLon(100.550662);
+                                simRadio1.setSpeed(0.0);
+                                simRadio1.setTrueCourse(0.0);
+                                simRadio1.setMagVariation(0.0);
+                                simT = new TDLInterface.SimulateRadioThread(simRadio1);
+                                simT.start();
+                                
+                                PPLI simRadio2 = new PPLI();
+                                simRadio2.setPosId("0088");
+                                simRadio2.setPosName("MemS");
+                                simRadio2.setPosLat(13.920016);
+                                simRadio2.setPosLon(100.450662);
+                                simRadio2.setSpeed(0.0);
+                                simRadio2.setTrueCourse(0.0);
+                                simRadio2.setMagVariation(0.0);
+                                simT2 = new TDLInterface.SimulateRadioThread(simRadio2);
+                                simT2.start();
+                                
+                                PPLI simRadio3 = new PPLI();
+                                simRadio3.setPosId("0088");
+                                simRadio3.setPosName("MemS");
+                                simRadio3.setPosLat(13.940016);
+                                simRadio3.setPosLon(100.480662);
+                                simRadio3.setSpeed(0.0);
+                                simRadio3.setTrueCourse(0.0);
+                                simRadio3.setMagVariation(0.0);
+                                simT3 = new TDLInterface.SimulateRadioThread(simRadio2);
+                                simT3.start();
+                                
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
 
