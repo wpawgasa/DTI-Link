@@ -65,6 +65,7 @@ public class TDLInterface {
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
+    public boolean simNoRadio = true;
 
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -227,6 +228,7 @@ public class TDLInterface {
                             case "connect":
                                 UIResProfileMessage retConn = new UIResProfileMessage();
                                 retConn.setMsg_name("response connect");
+                                if(!simNoRadio) {
                                 ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
                                 conn.setCommPort(conn_profile.getComm_port());
                                 conn.setBitRate(conn_profile.getBit_rates());
@@ -251,6 +253,13 @@ public class TDLInterface {
 
                                     rxT.start();
                                 }
+                                } else {
+                                    
+
+                                    rxT = new TDLInterface.ReceiveThread();
+
+                                    rxT.start();
+                                }
                                 retConn.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retConn));
                                 break;
@@ -259,6 +268,7 @@ public class TDLInterface {
                                 retSetup.setMsg_name("response setup");
                                 SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
                                 retSetup.setSetupProfile(setup_profile);
+                                if(!simNoRadio) {
                                 //check if radio in cmd mode
                                 //loop until radio is free from cmd mode
                                 while (TDLMessageHandler.isCmdMode) {
@@ -399,10 +409,23 @@ public class TDLInterface {
 
                                 Thread.sleep(1000);
                                 quitCmdMode();
-
                                 //Start position report thread
                                 reportT = new TDLInterface.PositionReportThread();
                                 reportT.start();
+                                } else {
+                                    PPLI ownPPLI = new PPLI();
+                                    ownPPLI.setPosId("0001");
+                                    ownPPLI.setPosName("This");
+                                    ownPPLI.setPosLat(13.910016);
+                                    ownPPLI.setPosLon(100.550662);
+                                    ownPPLI.setSpeed(0.0);
+                                    ownPPLI.setTrueCourse(0.0);
+                                    ownPPLI.setMagVariation(0.0);
+                                    
+                                    ownTrack.add(ownPPLI);
+                                    posreportRate = 5;
+                                }
+                                
 
                                 PPLI simRadio1 = new PPLI();
                                 simRadio1.setPosId("0099");
@@ -427,14 +450,14 @@ public class TDLInterface {
                                 simT2.start();
                                 
                                 PPLI simRadio3 = new PPLI();
-                                simRadio3.setPosId("0088");
-                                simRadio3.setPosName("MemS");
+                                simRadio3.setPosId("0077");
+                                simRadio3.setPosName("MemR");
                                 simRadio3.setPosLat(13.940016);
                                 simRadio3.setPosLon(100.480662);
                                 simRadio3.setSpeed(0.0);
                                 simRadio3.setTrueCourse(0.0);
                                 simRadio3.setMagVariation(0.0);
-                                simT3 = new TDLInterface.SimulateRadioThread(simRadio2);
+                                simT3 = new TDLInterface.SimulateRadioThread(simRadio3);
                                 simT3.start();
                                 
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
@@ -799,7 +822,7 @@ public class TDLInterface {
                     }
                     Thread.sleep(100);
                 }
-            } catch (InterruptedException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 this.kill();
             }
