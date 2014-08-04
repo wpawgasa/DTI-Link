@@ -974,7 +974,7 @@ public class TDLInterface {
                         while ((b = inputStream.read()) != -1) {
 
                             //if (b != 13) {  
-                            //System.out.println((char) b);
+                            System.out.println((int) b);
                             readBuffer.append(b + ",");
                             //}
 
