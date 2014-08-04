@@ -25,6 +25,7 @@ public class TDLServer extends Thread {
     private String returnMsg;
     //private SocketIOServer server;
     private boolean isServerRunning;
+    private boolean isSetting = false;
 
     public TDLServer() throws IOException {
         this.serverSocket = new ServerSocket(9889);
@@ -59,9 +60,11 @@ public class TDLServer extends Thread {
                             System.out.println(reqMsg);
                             TDLServer.this.processRequest(reqMsg);
                             System.out.println(TDLServer.this.getReturnMsg());
+                            if(!TDLServer.this.isIsSetting()) {
                             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                             out.writeUTF(TDLServer.this.getReturnMsg());
                             out.close();
+                            }
                         } catch (IOException e) {
 
                         }
@@ -87,5 +90,15 @@ public class TDLServer extends Thread {
     public void setReturnMsg(String returnMsg) {
         this.returnMsg = returnMsg;
     }
+
+    public boolean isIsSetting() {
+        return isSetting;
+    }
+
+    public void setIsSetting(boolean isSetting) {
+        this.isSetting = isSetting;
+    }
+    
+    
 
 }

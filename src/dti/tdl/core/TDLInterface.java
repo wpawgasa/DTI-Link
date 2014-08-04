@@ -66,6 +66,7 @@ public class TDLInterface {
     public String radioErr;
     public int posreportRate;
     public boolean simNoRadio = false;
+    public boolean isSetting = false;
 
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -267,6 +268,7 @@ public class TDLInterface {
                                 retSetup.setMsg_name("response setup");
                                 SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
                                 retSetup.setSetupProfile(setup_profile);
+                                this.setIsSetting(true);
                                 if (!simNoRadio) {
                                 //check if radio in cmd mode
                                     //loop until radio is free from cmd mode
@@ -460,8 +462,9 @@ public class TDLInterface {
 
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
-
+                                
                                 retSetup.setMsg_params(msg.msg_params);
+                                this.setIsSetting(false);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
                                 break;
                             case "request radio status":
