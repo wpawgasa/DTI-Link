@@ -978,6 +978,7 @@ public class TDLInterface {
                         //    if (b != (byte) 13) {
                         do {
                             b = (int) inputStream.read();
+                            System.out.println(b);
                             if(b!=-1) {
                             //if (b != 13) {  
                             //System.out.println(b);
@@ -986,7 +987,7 @@ public class TDLInterface {
                             //readBuffer.append(b + ",");
                             } else {
                                if(b_idx>=2) {
-                                   if((inputInt.get(b_idx-1)==0&&inputInt.get(b_idx-2)==10)||(inputInt.get(b_idx-1)==4&&inputInt.get(b_idx-2)==3)) {
+                                   if((inputInt.get(b_idx-1)==10&&inputInt.get(b_idx-2)==13)||(inputInt.get(b_idx-1)==4&&inputInt.get(b_idx-2)==3)) {
                                        msgEnd = true;
                                    }
                                } 
