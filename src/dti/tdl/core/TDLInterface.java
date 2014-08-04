@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -965,31 +966,51 @@ public class TDLInterface {
                 case SerialPortEvent.DATA_AVAILABLE:
                     //if (readBuffer.length() <= 0) {
                     StringBuilder readBuffer = new StringBuilder();
+                    List<Integer> inputInt = new ArrayList<Integer>();
                     //}
                     int c;
                     int b;
-                    int prev_b;
+                    int b_idx=0;
+                    
+                    boolean msgEnd = false;
                     try {
                         //while ((b = (byte) inputStream.read()) != (byte) 10) {
                         //    if (b != (byte) 13) {
-                        while ((b = inputStream.read()) != -1) {
-
+                        do {
+                            b = (int) inputStream.read();
+                            if(b!=-1) {
                             //if (b != 13) {  
-                            System.out.println(b);
-                            readBuffer.append(b + ",");
+                            //System.out.println(b);
+                            inputInt.add(b);
+                            b_idx++;
+                            //readBuffer.append(b + ",");
+                            } else {
+                               if(b_idx>=2) {
+                                   if((inputInt.get(b_idx-1)==0&&inputInt.get(b_idx-2)==10)||(inputInt.get(b_idx-1)==4&&inputInt.get(b_idx-2)==3)) {
+                                       msgEnd = true;
+                                   }
+                               } 
+                            }
                             //}
 
-                        }
-                        System.out.println(readBuffer.charAt(readBuffer.length() - 2));
+                        } while (!msgEnd);
+                        //System.out.println(readBuffer.charAt(readBuffer.length() - 2));
                         //if (readBuffer.charAt(readBuffer.length() - 2) == (char) 10) {
-                        readBuffer.substring(0, readBuffer.length());
-                        String scannedInput = readBuffer.toString();
-                        readBuffer = null;
-                        String[] rxBytesStrArray = scannedInput.split(",");
-                        byte[] rxBytes = new byte[rxBytesStrArray.length];
+                        //readBuffer.substring(0, readBuffer.length());
+                        //String scannedInput = readBuffer.toString();
+                        //readBuffer = null;
+                        //String[] rxBytesStrArray = scannedInput.split(",");
+                        //byte[] rxBytes = new byte[rxBytesStrArray.length];
+                        byte[] rxBytes = new byte[inputInt.size()];
                         String rxMsg = "";
-                        for (int j = 0; j < rxBytesStrArray.length; j++) {
-                            int byteInt = Integer.parseInt(rxBytesStrArray[j]);
+//                        for (int j = 0; j < rxBytesStrArray.length; j++) {
+//                            int byteInt = Integer.parseInt(rxBytesStrArray[j]);
+//                            //frameMsg = frameMsg+" "+byteInt;
+//                            rxBytes[j] = (byte) byteInt;
+//                            rxMsg = rxMsg + (char) byteInt;
+//                        }
+                        for (int j = 0; j < inputInt.size(); j++) {
+                            int byteInt = inputInt.get(j);
                             //frameMsg = frameMsg+" "+byteInt;
                             rxBytes[j] = (byte) byteInt;
                             rxMsg = rxMsg + (char) byteInt;
