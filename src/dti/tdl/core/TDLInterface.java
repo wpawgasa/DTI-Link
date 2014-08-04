@@ -968,13 +968,14 @@ public class TDLInterface {
                     //}
                     int c;
                     int b;
+                    int prev_b;
                     try {
                         //while ((b = (byte) inputStream.read()) != (byte) 10) {
                         //    if (b != (byte) 13) {
                         while ((b = inputStream.read()) != -1) {
 
                             //if (b != 13) {  
-                            System.out.println((int) b);
+                            System.out.println(b);
                             readBuffer.append(b + ",");
                             //}
 
