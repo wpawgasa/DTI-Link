@@ -65,7 +65,7 @@ public class TDLInterface {
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
-    public boolean simNoRadio = true;
+    public boolean simNoRadio = false;
 
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -228,33 +228,32 @@ public class TDLInterface {
                             case "connect":
                                 UIResProfileMessage retConn = new UIResProfileMessage();
                                 retConn.setMsg_name("response connect");
-                                if(!simNoRadio) {
-                                ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
-                                conn.setCommPort(conn_profile.getComm_port());
-                                conn.setBitRate(conn_profile.getBit_rates());
-                                conn.setDataBits(conn_profile.getData_bits());
-                                conn.setParity(conn_profile.getParity());
-                                conn.setStopBits(conn_profile.getStop_bits());
-                                conn.setFlowControl(conn_profile.getFlowcontrol());
-                                conn.setPortId();
+                                if (!simNoRadio) {
+                                    ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
+                                    conn.setCommPort(conn_profile.getComm_port());
+                                    conn.setBitRate(conn_profile.getBit_rates());
+                                    conn.setDataBits(conn_profile.getData_bits());
+                                    conn.setParity(conn_profile.getParity());
+                                    conn.setStopBits(conn_profile.getStop_bits());
+                                    conn.setFlowControl(conn_profile.getFlowcontrol());
+                                    conn.setPortId();
 
-                                if (!conn.connect()) {
-                                    retConn.setMsg_err(conn.errMsg);
+                                    if (!conn.connect()) {
+                                        retConn.setMsg_err(conn.errMsg);
+                                    } else {
+
+                                        inputStream = conn.getSerialInputStream();
+                                        outputStream = conn.getSerialOutputStream();
+                                        conn.setPortListener(new TDLInterface.portListener());
+                                        txT = new TDLInterface.TransmitThread();
+
+                                        txT.start();
+
+                                        rxT = new TDLInterface.ReceiveThread();
+
+                                        rxT.start();
+                                    }
                                 } else {
-
-                                    inputStream = conn.getSerialInputStream();
-                                    outputStream = conn.getSerialOutputStream();
-                                    conn.setPortListener(new TDLInterface.portListener());
-                                    txT = new TDLInterface.TransmitThread();
-
-                                    txT.start();
-
-                                    rxT = new TDLInterface.ReceiveThread();
-
-                                    rxT.start();
-                                }
-                                } else {
-                                    
 
                                     rxT = new TDLInterface.ReceiveThread();
 
@@ -268,150 +267,150 @@ public class TDLInterface {
                                 retSetup.setMsg_name("response setup");
                                 SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
                                 retSetup.setSetupProfile(setup_profile);
-                                if(!simNoRadio) {
+                                if (!simNoRadio) {
                                 //check if radio in cmd mode
-                                //loop until radio is free from cmd mode
-                                while (TDLMessageHandler.isCmdMode) {
-                                    Thread.sleep(200);
-                                }
+                                    //loop until radio is free from cmd mode
+                                    while (TDLMessageHandler.isCmdMode) {
+                                        Thread.sleep(200);
+                                    }
                                 //Thread.sleep(10000);
-                                //Put radio into cmd mode after radio is free
-                                startCmdMode();
+                                    //Put radio into cmd mode after radio is free
+                                    startCmdMode();
 
-                                Thread.sleep(1000);
-                                //check radio status
+                                    Thread.sleep(1000);
+                                    //check radio status
 
-                                if (checkRadioStatus()) {
-                                    retSetup.getSetupProfile().setRadioId(ownRadioId);
-                                    //Enable GPS
+                                    if (checkRadioStatus()) {
+                                        retSetup.getSetupProfile().setRadioId(ownRadioId);
+                                        //Enable GPS
 
-                                    if (setup_profile.getGpsprofile().isGpsenabled()) {
+                                        if (setup_profile.getGpsprofile().isGpsenabled()) {
 
-                                        //set gps mode
+                                            //set gps mode
+                                            Thread.sleep(1000);
+                                            if (!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
+                                                break;
+                                            }
+                                            //enable gps report message
+                                            Thread.sleep(1000);
+                                            if (!setNMEAOUT(1)) {
+                                                break;
+                                            }
+                                            //set gps update rate
+                                            Thread.sleep(1000);
+                                            if (!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
+                                                break;
+                                            }
+                                            //set gps report rate
+                                            posreportRate = setup_profile.getGpsprofile().getGpsreport();
+                                            //start position report
+
+                                        } else {
+                                            Thread.sleep(1000);
+                                            if (!setGPSMode(0)) {
+                                                break;
+                                            }
+
+                                            Thread.sleep(1000);
+                                            if (!setNMEAOUT(0)) {
+                                                break;
+                                            }
+
+                                        }
+
+                                        //Select channel
                                         Thread.sleep(1000);
-                                        if (!setGPSMode(setup_profile.getGpsprofile().getGpsmode())) {
+                                        if (!selectRadioChannel(1)) {
                                             break;
                                         }
-                                        //enable gps report message
+
+                                        //Set frequency
                                         Thread.sleep(1000);
-                                        if (!setNMEAOUT(1)) {
+                                        if (!setRadioFreq(setup_profile.getRadioprofile().getFrequency())) {
                                             break;
                                         }
-                                        //set gps update rate
+
+                                        //Set power output
                                         Thread.sleep(1000);
-                                        if (!setGPSUpdate(setup_profile.getGpsprofile().getGpsreport())) {
+                                        if (!setRadioPwr(setup_profile.getRadioprofile().getPower())) {
                                             break;
                                         }
-                                        //set gps report rate
-                                        posreportRate = setup_profile.getGpsprofile().getGpsreport();
-                                        //start position report
+
+                                        //Set ota baud
+                                        Thread.sleep(1000);
+                                        if (!setOTABaud(setup_profile.getRadioprofile().getOtabaud())) {
+                                            break;
+                                        }
+
+                                        //Set slot time
+                                        Thread.sleep(1000);
+                                        if (!setSlottime(setup_profile.getRadioprofile().getSlottime())) {
+                                            break;
+                                        }
+
+                                        //Set frame time
+                                        Thread.sleep(1000);
+                                        if (!setTDMAtime(setup_profile.getRadioprofile().getFrametime())) {
+                                            break;
+                                        }
+
+                                        //set nmeamask
+                                        Thread.sleep(1000);
+                                        if (!setNMEAMASK(256)) {
+                                            break;
+                                        }
+
+                                        //disable WMX
+                                        Thread.sleep(1000);
+                                        if (!setWMX(0)) {
+                                            break;
+                                        }
+
+                                        //Set key
+                                        Thread.sleep(1000);
+                                        if (!setup_profile.getMissionkey().equals("")) {
+
+                                            if (!setKEY(setup_profile.getMissionkey())) {
+                                                break;
+                                            }
+                                        } else {
+                                            if (!setKEY("0")) {
+                                                break;
+                                            }
+                                        }
+
+                                        //Calculate max message bytes
+                                        double slottime = (double) setup_profile.getRadioprofile().getSlottime();
+                                        int ota = setup_profile.getRadioprofile().getOtabaud();
+                                        double bitrate = 0;
+                                        switch (ota) {
+                                            case 3:
+                                                bitrate = 4800;
+                                                break;
+                                            case 5:
+                                                bitrate = 9600;
+                                                break;
+                                            case 6:
+                                                bitrate = 19200;
+                                                break;
+                                            default:
+                                                bitrate = 9600;
+                                                break;
+                                        }
+
+                                        TDLMessageHandler.messageMaxBytes = Math.floor(slottime * bitrate * 0.001 / 8) - TDLMessageHandler.messageOverheadBytes;
 
                                     } else {
-                                        Thread.sleep(1000);
-                                        if (!setGPSMode(0)) {
-                                            break;
-                                        }
-
-                                        Thread.sleep(1000);
-                                        if (!setNMEAOUT(0)) {
-                                            break;
-                                        }
-
+                                        radioErr = "Radio Offline";
                                     }
 
-                                    //Select channel
+                                    retSetup.setMsg_err(radioErr);
+
                                     Thread.sleep(1000);
-                                    if (!selectRadioChannel(1)) {
-                                        break;
-                                    }
-
-                                    //Set frequency
-                                    Thread.sleep(1000);
-                                    if (!setRadioFreq(setup_profile.getRadioprofile().getFrequency())) {
-                                        break;
-                                    }
-
-                                    //Set power output
-                                    Thread.sleep(1000);
-                                    if (!setRadioPwr(setup_profile.getRadioprofile().getPower())) {
-                                        break;
-                                    }
-
-                                    //Set ota baud
-                                    Thread.sleep(1000);
-                                    if (!setOTABaud(setup_profile.getRadioprofile().getOtabaud())) {
-                                        break;
-                                    }
-
-                                    //Set slot time
-                                    Thread.sleep(1000);
-                                    if (!setSlottime(setup_profile.getRadioprofile().getSlottime())) {
-                                        break;
-                                    }
-
-                                    //Set frame time
-                                    Thread.sleep(1000);
-                                    if (!setTDMAtime(setup_profile.getRadioprofile().getFrametime())) {
-                                        break;
-                                    }
-
-                                    //set nmeamask
-                                    Thread.sleep(1000);
-                                    if (!setNMEAMASK(256)) {
-                                        break;
-                                    }
-
-                                    //disable WMX
-                                    Thread.sleep(1000);
-                                    if (!setWMX(0)) {
-                                        break;
-                                    }
-
-                                    //Set key
-                                    Thread.sleep(1000);
-                                    if (!setup_profile.getMissionkey().equals("")) {
-
-                                        if (!setKEY(setup_profile.getMissionkey())) {
-                                            break;
-                                        }
-                                    } else {
-                                        if (!setKEY("0")) {
-                                            break;
-                                        }
-                                    }
-
-                                    //Calculate max message bytes
-                                    double slottime = (double) setup_profile.getRadioprofile().getSlottime();
-                                    int ota = setup_profile.getRadioprofile().getOtabaud();
-                                    double bitrate = 0;
-                                    switch (ota) {
-                                        case 3:
-                                            bitrate = 4800;
-                                            break;
-                                        case 5:
-                                            bitrate = 9600;
-                                            break;
-                                        case 6:
-                                            bitrate = 19200;
-                                            break;
-                                        default:
-                                            bitrate = 9600;
-                                            break;
-                                    }
-
-                                    TDLMessageHandler.messageMaxBytes = Math.floor(slottime * bitrate * 0.001 / 8) - TDLMessageHandler.messageOverheadBytes;
-
-                                } else {
-                                    radioErr = "Radio Offline";
-                                }
-
-                                retSetup.setMsg_err(radioErr);
-
-                                Thread.sleep(1000);
-                                quitCmdMode();
-                                //Start position report thread
-                                reportT = new TDLInterface.PositionReportThread();
-                                reportT.start();
+                                    quitCmdMode();
+                                    //Start position report thread
+                                    reportT = new TDLInterface.PositionReportThread();
+                                    reportT.start();
                                 } else {
                                     PPLI ownPPLI = new PPLI();
                                     ownPPLI.setPosId("0001");
@@ -421,45 +420,44 @@ public class TDLInterface {
                                     ownPPLI.setSpeed(0.0);
                                     ownPPLI.setTrueCourse(0.0);
                                     ownPPLI.setMagVariation(0.0);
-                                    
+
                                     ownTrack.add(ownPPLI);
                                     posreportRate = 5;
-                                }
-                                
 
-                                PPLI simRadio1 = new PPLI();
-                                simRadio1.setPosId("0099");
-                                simRadio1.setPosName("MemT");
-                                simRadio1.setPosLat(13.910016);
-                                simRadio1.setPosLon(100.550662);
-                                simRadio1.setSpeed(0.0);
-                                simRadio1.setTrueCourse(0.0);
-                                simRadio1.setMagVariation(0.0);
-                                simT = new TDLInterface.SimulateRadioThread(simRadio1);
-                                simT.start();
-                                
-                                PPLI simRadio2 = new PPLI();
-                                simRadio2.setPosId("0088");
-                                simRadio2.setPosName("MemS");
-                                simRadio2.setPosLat(13.920016);
-                                simRadio2.setPosLon(100.450662);
-                                simRadio2.setSpeed(0.0);
-                                simRadio2.setTrueCourse(0.0);
-                                simRadio2.setMagVariation(0.0);
-                                simT2 = new TDLInterface.SimulateRadioThread(simRadio2);
-                                simT2.start();
-                                
-                                PPLI simRadio3 = new PPLI();
-                                simRadio3.setPosId("0077");
-                                simRadio3.setPosName("MemR");
-                                simRadio3.setPosLat(13.940016);
-                                simRadio3.setPosLon(100.480662);
-                                simRadio3.setSpeed(0.0);
-                                simRadio3.setTrueCourse(0.0);
-                                simRadio3.setMagVariation(0.0);
-                                simT3 = new TDLInterface.SimulateRadioThread(simRadio3);
-                                simT3.start();
-                                
+                                    PPLI simRadio1 = new PPLI();
+                                    simRadio1.setPosId("0099");
+                                    simRadio1.setPosName("MemT");
+                                    simRadio1.setPosLat(13.910016);
+                                    simRadio1.setPosLon(100.550662);
+                                    simRadio1.setSpeed(0.0);
+                                    simRadio1.setTrueCourse(0.0);
+                                    simRadio1.setMagVariation(0.0);
+                                    simT = new TDLInterface.SimulateRadioThread(simRadio1);
+                                    simT.start();
+
+                                    PPLI simRadio2 = new PPLI();
+                                    simRadio2.setPosId("0088");
+                                    simRadio2.setPosName("MemS");
+                                    simRadio2.setPosLat(13.920016);
+                                    simRadio2.setPosLon(100.450662);
+                                    simRadio2.setSpeed(0.0);
+                                    simRadio2.setTrueCourse(0.0);
+                                    simRadio2.setMagVariation(0.0);
+                                    simT2 = new TDLInterface.SimulateRadioThread(simRadio2);
+                                    simT2.start();
+
+                                    PPLI simRadio3 = new PPLI();
+                                    simRadio3.setPosId("0077");
+                                    simRadio3.setPosName("MemR");
+                                    simRadio3.setPosLat(13.940016);
+                                    simRadio3.setPosLon(100.480662);
+                                    simRadio3.setSpeed(0.0);
+                                    simRadio3.setTrueCourse(0.0);
+                                    simRadio3.setMagVariation(0.0);
+                                    simT3 = new TDLInterface.SimulateRadioThread(simRadio3);
+                                    simT3.start();
+                                }
+
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
 
@@ -1017,7 +1015,7 @@ public class TDLInterface {
                                 }
                                 tmpStr = "";
                             } //else {
-                               // tmpStr = tmpStr+rxMsg;
+                            // tmpStr = tmpStr+rxMsg;
                             //}
                             if ((int) rxBytes[rxBytes.length - 1] == 4) {
                                 if (rxMsg.charAt(0) == (char) 1) {
