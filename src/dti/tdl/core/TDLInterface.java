@@ -812,6 +812,7 @@ public class TDLInterface {
                             } else {
                                 MemberProfile foundMember = findMember(rcvPPLI.getPosId(), rcvPPLI.getPosName());
                                 foundMember.setCurrPos(rcvPPLI);
+                                foundMember.setStatus(true);
                                 foundMember.setUpdateTime(new Date());
                             }
                         } else if (msgType == (byte) 48) {
