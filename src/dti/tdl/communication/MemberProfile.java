@@ -48,7 +48,11 @@ public class MemberProfile {
         this.status = status;
     }
 
-    public Date getUpdateTime() {
+    public String getUpdateTime() {
+        return updateTime.toString();
+    }
+    
+    public Date getUpdateTimestamp() {
         return updateTime;
     }
 

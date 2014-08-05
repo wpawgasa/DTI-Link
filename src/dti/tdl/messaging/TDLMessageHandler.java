@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.CRC32;
@@ -27,7 +28,7 @@ public class TDLMessageHandler {
 
     public static boolean hasUnfinishedMsg = false;
     public final static LinkedList<String> txStack = new LinkedList<String>();
-    public final static LinkedList<TDLMessage> rxStack = new LinkedList<TDLMessage>();
+    public final static ConcurrentLinkedQueue<TDLMessage> rxStack = new ConcurrentLinkedQueue<TDLMessage>();
     public final static LinkedList<String> cmdReqStack = new LinkedList<String>();
     public final static LinkedList<String> cmdResStack = new LinkedList<String>();
     public static boolean isCmdMode = false;
@@ -84,7 +85,8 @@ public class TDLMessageHandler {
         if (startIdx == -1 || endIdx == -1 || endMsgIdx < startMsgIdx || endIdx < startMsgIdx || endIdx < endMsgIdx || startMsgIdx < startIdx) {
             String err = "Corrupted Message: invalid frame";
             TDLMessage rxMsg = new TDLMessage(null, null, null, null, (byte) 48, err.getBytes());
-            rxStack.add(rxMsg);
+//            rxStack.add(rxMsg);
+            rxStack.offer(rxMsg);
             return;
         }
         byte[] msgType = {bytes[startIdx + 1]};
@@ -117,12 +119,14 @@ public class TDLMessageHandler {
         if (newChecksum != receiveChecksum) {
             String err = "Corrupted Message: checksum not matched";
             TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, (byte) 48, err.getBytes());
-            rxStack.add(rxMsgObj);
+            //            rxStack.add(rxMsg);
+            rxStack.offer(rxMsgObj);
             return;
         }
         
         TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, msgType[0], msg);
-        rxStack.add(rxMsgObj);
+        //            rxStack.add(rxMsg);
+            rxStack.offer(rxMsgObj);
 //        } catch (UnsupportedEncodingException ex) {
 //        }
 

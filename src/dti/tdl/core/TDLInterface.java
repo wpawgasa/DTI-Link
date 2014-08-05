@@ -66,7 +66,7 @@ public class TDLInterface {
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
-    public boolean simNoRadio = false;
+    public boolean simNoRadio = true;
     public boolean isSetting = false;
 
     public TDLInterface() {
@@ -271,12 +271,12 @@ public class TDLInterface {
                                 retSetup.setSetupProfile(setup_profile);
                                 this.setIsSetting(true);
                                 if (!simNoRadio) {
-                                //check if radio in cmd mode
+                                    //check if radio in cmd mode
                                     //loop until radio is free from cmd mode
                                     while (TDLMessageHandler.isCmdMode) {
                                         Thread.sleep(200);
                                     }
-                                //Thread.sleep(10000);
+                                    //Thread.sleep(10000);
                                     //Put radio into cmd mode after radio is free
                                     startCmdMode();
 
@@ -463,7 +463,7 @@ public class TDLInterface {
 
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
                                 checkStatT.start();
-                                
+
                                 retSetup.setMsg_params(msg.msg_params);
                                 this.setIsSetting(false);
                                 this.setReturnMsg(mapper.writeValueAsString(retSetup));
@@ -792,35 +792,39 @@ public class TDLInterface {
             try {
                 while (isThreadAlive) {
                     if (TDLMessageHandler.rxStack.size() > 0) {
-                        TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
-                        System.out.println("Received message from: " + rxMsg.getProfileId());
-                        byte msgType = rxMsg.getMsgType();
-                        byte[] data = rxMsg.getMsg();
+                        System.out.println("Rx Stack size: " + TDLMessageHandler.rxStack.size());
+                        TDLMessage rxMsg = TDLMessageHandler.rxStack.poll();
+                        if (rxMsg!=null) {
+                            
+                            System.out.println("Received message from: " + rxMsg.getProfileId());
+                            byte msgType = rxMsg.getMsgType();
+                            byte[] data = rxMsg.getMsg();
 
-                        if (msgType == (byte) 49) {
-                            //receive message is position report
-                            System.out.println("Received position report from " + rxMsg.getProfileId());
-                            PPLI rcvPPLI = TDLMessageHandler.bytestoPPLI(data);
-                            rcvPPLI.setPosId(rxMsg.getFromId());
-                            rcvPPLI.setPosName(rxMsg.getProfileId());
-                            memberTracks.add(rcvPPLI);
-                            System.out.println("Lat: " + rcvPPLI.getPosLat() + ",Lon: " + rcvPPLI.getPosLon());
-                            if (!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
-                                MemberProfile newMember = new MemberProfile();
-                                newMember.setRadioId(rcvPPLI.getPosId());
-                                newMember.setProfileName(rcvPPLI.getPosName());
-                                newMember.setStatus(true);
-                                newMember.setCurrPos(rcvPPLI);
-                                newMember.setUpdateTime(new Date());
-                                members.add(newMember);
-                            } else {
-                                MemberProfile foundMember = findMember(rcvPPLI.getPosId(), rcvPPLI.getPosName());
-                                foundMember.setCurrPos(rcvPPLI);
-                                foundMember.setStatus(true);
-                                foundMember.setUpdateTime(new Date());
+                            if (msgType == (byte) 49) {
+                                //receive message is position report
+                                System.out.println("Received position report from " + rxMsg.getProfileId());
+                                PPLI rcvPPLI = TDLMessageHandler.bytestoPPLI(data);
+                                rcvPPLI.setPosId(rxMsg.getFromId());
+                                rcvPPLI.setPosName(rxMsg.getProfileId());
+                                memberTracks.add(rcvPPLI);
+                                System.out.println("Lat: " + rcvPPLI.getPosLat() + ",Lon: " + rcvPPLI.getPosLon());
+                                if (!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
+                                    MemberProfile newMember = new MemberProfile();
+                                    newMember.setRadioId(rcvPPLI.getPosId());
+                                    newMember.setProfileName(rcvPPLI.getPosName());
+                                    newMember.setStatus(true);
+                                    newMember.setCurrPos(rcvPPLI);
+                                    newMember.setUpdateTime(new Date());
+                                    members.add(newMember);
+                                } else {
+                                    MemberProfile foundMember = findMember(rcvPPLI.getPosId(), rcvPPLI.getPosName());
+                                    foundMember.setCurrPos(rcvPPLI);
+                                    foundMember.setStatus(true);
+                                    foundMember.setUpdateTime(new Date());
+                                }
+                            } else if (msgType == (byte) 48) {
+                                System.out.println("Received corrupted message from " + rxMsg.getProfileId());
                             }
-                        } else if (msgType == (byte) 48) {
-                            System.out.println("Received corrupted message from " + rxMsg.getProfileId());
                         }
                     }
                     Thread.sleep(100);
@@ -896,7 +900,7 @@ public class TDLInterface {
                         Date now = new Date();
                         for (int i = 0; i < members.size(); i++) {
                             MemberProfile member = members.get(i);
-                            if (now.getTime() - member.getUpdateTime().getTime() > 10000) {
+                            if (now.getTime() - member.getUpdateTimestamp().getTime() > 10000) {
                                 member.setStatus(false);
                             }
                         }
@@ -970,8 +974,8 @@ public class TDLInterface {
                     //}
                     int c;
                     int b;
-                    int b_idx=0;
-                    
+                    int b_idx = 0;
+
                     boolean msgEnd = false;
                     try {
                         //while ((b = (byte) inputStream.read()) != (byte) 10) {
@@ -979,18 +983,18 @@ public class TDLInterface {
                         do {
                             b = (int) inputStream.read();
                             //System.out.println(b);
-                            if(b!=-1) {
+                            if (b != -1) {
                             //if (b != 13) {  
-                            //System.out.println(b);
-                            inputInt.add(b);
-                            b_idx++;
-                            //readBuffer.append(b + ",");
+                                //System.out.println(b);
+                                inputInt.add(b);
+                                b_idx++;
+                                //readBuffer.append(b + ",");
                             } else {
-                               if(b_idx>=2) {
-                                   if((inputInt.get(b_idx-1)==10&&inputInt.get(b_idx-2)==13)||(inputInt.get(b_idx-1)==4&&inputInt.get(b_idx-2)==3)) {
-                                       msgEnd = true;
-                                   }
-                               } 
+                                if (b_idx >= 2) {
+                                    if ((inputInt.get(b_idx - 1) == 10 && inputInt.get(b_idx - 2) == 13) || (inputInt.get(b_idx - 1) == 4 && inputInt.get(b_idx - 2) == 3)) {
+                                        msgEnd = true;
+                                    }
+                                }
                             }
                             //}
 
