@@ -978,7 +978,7 @@ public class TDLInterface {
                         //    if (b != (byte) 13) {
                         do {
                             b = (int) inputStream.read();
-                            System.out.println(b);
+                            //System.out.println(b);
                             if(b!=-1) {
                             //if (b != 13) {  
                             //System.out.println(b);
