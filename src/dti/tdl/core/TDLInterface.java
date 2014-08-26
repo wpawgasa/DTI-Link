@@ -66,7 +66,7 @@ public class TDLInterface {
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
     public int posreportRate;
-    public boolean simNoRadio = true;
+    public boolean simNoRadio = false;
     public boolean isSetting = false;
 
     public TDLInterface() {
