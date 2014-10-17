@@ -549,7 +549,7 @@ public class TestTDL extends javax.swing.JFrame {
             try {
                 while(isThreadAlive) {
                     if(TDLMessageHandler.rxStack.size()>0) {
-                        TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
+//                        TDLMessage rxMsg = TDLMessageHandler.rxStack.removeFirst();
                         //userMsgTxtArea.append("Received message: "+rxMsg.getMsg()+"\n");
                     }
                     Thread.sleep(100);

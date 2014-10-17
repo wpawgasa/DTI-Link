@@ -17,6 +17,7 @@ import dti.tdl.db.EmbeddedDB;
 import dti.tdl.messaging.PPLI;
 import dti.tdl.messaging.TDLMessage;
 import dti.tdl.messaging.TDLMessageHandler;
+import dti.tdl.messaging.TacMessage;
 import dti.tdl.messaging.UIReqMessage;
 import dti.tdl.messaging.UIResMembersMessage;
 import dti.tdl.messaging.UIResPPLIMessage;
@@ -494,11 +495,14 @@ public class TDLInterface {
                                 break;
                             case "request member record":
                                 break;
-                            case "send broadcast text":
+                            case "send broadcast tac-messages":
+                                TacMessage reqTacMsg = mapper.readValue(msg.msg_params, TacMessage.class);
+                                TDLMessage tacmsg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 50, reqTacMsg.getTac_message().getBytes());
+                                TDLMessageHandler.constructFrame(tacmsg);
                                 break;
                             case "send individual text":
                                 break;
-                            case "get broadcast text":
+                            case "request tac-messages":
                                 break;
                             case "get individual text":
                                 break;
@@ -824,6 +828,8 @@ public class TDLInterface {
                                 }
                             } else if (msgType == (byte) 48) {
                                 System.out.println("Received corrupted message from " + rxMsg.getProfileId());
+                            } else if (msgType == (byte) 50) {
+                                System.out.println("Received tac message from " + rxMsg.getProfileId());
                             }
                         }
                     }
