@@ -20,6 +20,7 @@ import dti.tdl.messaging.TDLMessageHandler;
 import dti.tdl.messaging.TacMessage;
 import dti.tdl.messaging.UIReqMessage;
 import dti.tdl.messaging.UIResMembersMessage;
+import dti.tdl.messaging.UIResMessage;
 import dti.tdl.messaging.UIResPPLIMessage;
 import dti.tdl.messaging.UIResProfileMessage;
 import dti.tdl.messaging.UIResSetupMessage;
@@ -499,6 +500,9 @@ public class TDLInterface {
                                 TacMessage reqTacMsg = mapper.readValue(msg.msg_params, TacMessage.class);
                                 TDLMessage tacmsg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 50, reqTacMsg.getTac_message().getBytes());
                                 TDLMessageHandler.constructFrame(tacmsg);
+                                UIResMessage resMsg = new UIResMessage();
+                                resMsg.setMsg_name("response transmit message");
+                                resMsg.setMsg_params("success");
                                 break;
                             case "send individual text":
                                 break;
