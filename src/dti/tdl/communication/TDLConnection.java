@@ -1,7 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * This class handle the connection to Data Terminal
+ * Created by Wichai Pawgasame (ODC3)
+ * Date created: 20/06/2014
+ * Last modified: 20/05/2015
  */
 package dti.tdl.communication;
 
@@ -44,8 +45,10 @@ public class TDLConnection  {
         try {
             errMsg = "";
             this.TimeStamp = new java.util.Date().toString();
-            this.serialPort = (SerialPort) this.portId.open("TDLConnection", 2000);
-            System.out.println(TimeStamp + ": " + this.portId.getName() + " opened for communicate with Radio");
+            this.serialPort = 
+                    (SerialPort) this.portId.open("TDLConnection", 2000);
+            System.out.println(TimeStamp + ": " + this.portId.getName() + 
+                    " opened for communicate with Radio");
 
         } catch (PortInUseException e) {
             errMsg = e.getMessage();
@@ -70,10 +73,7 @@ public class TDLConnection  {
             e.printStackTrace();
             return false;
         }
-        //inputStream = getSerialInputStream();
-        //setPortListener(this);
-        //readThread = new Thread(this);
-        //readThread.start();
+        
         return true;
     }
 
@@ -99,7 +99,8 @@ public class TDLConnection  {
             os = serialPort.getOutputStream();
             
         } catch (IOException e) {
-            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, e);
+            Logger.getLogger(TDLConnection.class.getName())
+                    .log(Level.SEVERE, null, e);
         }
         return os;
     }
@@ -108,7 +109,8 @@ public class TDLConnection  {
         try {
             serialPort.addEventListener(portListener);
         } catch (TooManyListenersException ex) {
-            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TDLConnection.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }
     public String getCommPort() {
@@ -164,49 +166,12 @@ public class TDLConnection  {
         try {
             this.portId = CommPortIdentifier.getPortIdentifier(this.commPort);
         } catch (NoSuchPortException ex) {
-            Logger.getLogger(TDLConnection.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TDLConnection.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }
 
-//    @Override
-//    public void run() {
-//        try {
-//            Thread.sleep(100);
-//        } catch (InterruptedException ex) {
-//            ex.printStackTrace();
-//        }
-//    }
-//
-//    @Override
-//    public void serialEvent(SerialPortEvent event) {
-//        switch(event.getEventType()) {
-//        case SerialPortEvent.BI:
-//        case SerialPortEvent.OE:
-//        case SerialPortEvent.FE:
-//        case SerialPortEvent.PE:
-//        case SerialPortEvent.CD:
-//        case SerialPortEvent.CTS:
-//        case SerialPortEvent.DSR:
-//        case SerialPortEvent.RI:
-//        case SerialPortEvent.OUTPUT_BUFFER_EMPTY:
-//            break;
-//        case SerialPortEvent.DATA_AVAILABLE:
-//            StringBuilder readBuffer = new StringBuilder();
-//            int c;
-//            try {
-//                 while ((c=inputStream.read()) != 10){
-//                   if(c!=13)  readBuffer.append((char) c);
-//                 }
-//                 String scannedInput = readBuffer.toString();
-//                 TimeStamp = new java.util.Date().toString();
-//                 System.out.println(TimeStamp + ": input received:" + scannedInput);
-//                 
-//            } catch (IOException e) {}
-//
-//            break;
-//        }
-//    }
-    
+
     public int getSerialPortDataBits(int bits) {
         int value = 8;
         switch (bits) {
@@ -258,17 +223,5 @@ public class TDLConnection  {
         return value;
     }
 
-    
-//    public static void main(String[] args) {
-//        try {
-//          portId = CommPortIdentifier.getPortIdentifier("COM1");
-//          TDLConnection conn = new TDLConnection();
-//        }
-//
-//        catch(Exception e) {
-//            TimeStamp = new java.util.Date().toString();
-//            System.out.println(TimeStamp + ": COM1 " + portId);
-//            System.out.println(TimeStamp + ": msg1 - " + e);
-//        }
-//    }
+
 }

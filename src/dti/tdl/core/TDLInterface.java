@@ -27,9 +27,13 @@ import dti.tdl.messaging.UIResSetupMessage;
 import dti.tdl.messaging.UIResStatusMessage;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.AbstractList;
@@ -69,7 +73,9 @@ public class TDLInterface {
     public String radioErr;
     public int posreportRate;
     public boolean simNoRadio = false;
+    public boolean demo = true;
     public boolean isSetting = false;
+    public TDLDemoClient demoClient;
 
     public TDLInterface() {
         db = new EmbeddedDB();
@@ -232,7 +238,7 @@ public class TDLInterface {
                             case "connect":
                                 UIResProfileMessage retConn = new UIResProfileMessage();
                                 retConn.setMsg_name("response connect");
-                                if (!simNoRadio) {
+                                if (!simNoRadio && !demo) {
                                     ConnectionProfile conn_profile = mapper.readValue(msg.msg_params, ConnectionProfile.class);
                                     conn.setCommPort(conn_profile.getComm_port());
                                     conn.setBitRate(conn_profile.getBit_rates());
@@ -258,10 +264,16 @@ public class TDLInterface {
                                         rxT.start();
                                     }
                                 } else {
+                                    if (demo) {
+                                        //set up socket client
+                                        demoClient = new TDLInterface.TDLDemoClient();
+                                        demoClient.start();
 
-                                    rxT = new TDLInterface.ReceiveThread();
+                                    } else {
+                                        rxT = new TDLInterface.ReceiveThread();
 
-                                    rxT.start();
+                                        rxT.start();
+                                    }
                                 }
                                 retConn.setMsg_params(msg.msg_params);
                                 this.setReturnMsg(mapper.writeValueAsString(retConn));
@@ -272,7 +284,7 @@ public class TDLInterface {
                                 SetupProfile setup_profile = mapper.readValue(msg.msg_params, SetupProfile.class);
                                 retSetup.setSetupProfile(setup_profile);
                                 this.setIsSetting(true);
-                                if (!simNoRadio) {
+                                if (!simNoRadio && !demo) {
                                     //check if radio in cmd mode
                                     //loop until radio is free from cmd mode
                                     while (TDLMessageHandler.isCmdMode) {
@@ -416,7 +428,7 @@ public class TDLInterface {
                                     //Start position report thread
                                     reportT = new TDLInterface.PositionReportThread();
                                     reportT.start();
-                                } else {
+                                } else if (!demo) {
                                     PPLI ownPPLI = new PPLI();
                                     ownPPLI.setPosId("0001");
                                     ownPPLI.setPosName("This");
@@ -461,6 +473,16 @@ public class TDLInterface {
                                     simRadio3.setMagVariation(0.0);
                                     simT3 = new TDLInterface.SimulateRadioThread(simRadio3);
                                     simT3.start();
+                                } else {
+                                    PPLI ppli = new PPLI();
+                                    ownRadioId = "0001";
+                                    ppli.setPosId(ownRadioId);
+                                    ppli.setPosName(ownprofileId);
+                                    ppli.setPosLat(13.936850);
+                                    ppli.setPosLon(100.549467);
+                                    ownTrack.add(ppli);
+                                    reportT = new TDLInterface.PositionReportThread();
+                                    reportT.start();
                                 }
 
                                 checkStatT = new TDLInterface.CheckingMemberStatusThread();
@@ -802,8 +824,8 @@ public class TDLInterface {
                     if (TDLMessageHandler.rxStack.size() > 0) {
                         System.out.println("Rx Stack size: " + TDLMessageHandler.rxStack.size());
                         TDLMessage rxMsg = TDLMessageHandler.rxStack.poll();
-                        if (rxMsg!=null) {
-                            
+                        if (rxMsg != null) {
+
                             System.out.println("Received message from: " + rxMsg.getProfileId());
                             byte msgType = rxMsg.getMsgType();
                             byte[] data = rxMsg.getMsg();
@@ -941,13 +963,22 @@ public class TDLInterface {
                 while (isThreadAlive) {
                     if (ownTrack.size() > 0) {
                         PPLI txPPLI = ownTrack.getLast();
-                        byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
-                        TDLMessage msg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 49, ppliBytes);
-                        TDLMessageHandler.constructFrame(msg);
+                        if (!demo) {
+                            byte[] ppliBytes = TDLMessageHandler.pplitobytes(txPPLI);
+                            TDLMessage msg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 49, ppliBytes);
+                            TDLMessageHandler.constructFrame(msg);
+                        } else {
+                            ObjectMapper mapper = new ObjectMapper();
+                            UIReqMessage reqmsg = new UIReqMessage();
+                            reqmsg.setMsg_name("report position");
+                            reqmsg.setMsg_params(mapper.writeValueAsString(txPPLI));
+                            demoClient.out.println(mapper.writeValueAsString(reqmsg));
+
+                        }
                     }
                     Thread.sleep(posreportRate * 1000);
                 }
-            } catch (InterruptedException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -994,7 +1025,7 @@ public class TDLInterface {
                             b = (int) inputStream.read();
                             //System.out.println(b);
                             if (b != -1) {
-                            //if (b != 13) {  
+                                //if (b != 13) {  
                                 //System.out.println(b);
                                 inputInt.add(b);
                                 b_idx++;
@@ -1074,4 +1105,65 @@ public class TDLInterface {
         }
     }
 
+    public class TDLDemoClient extends Thread {
+
+        BufferedReader in;
+        PrintWriter out;
+
+        @Override
+        public void run() {
+            // Make connection and initialize streams
+            String serverAddress = "localhost";
+            try {
+                Socket socket = new Socket(serverAddress, 9890);
+                in = new BufferedReader(new InputStreamReader(
+                        socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+
+                // Process all messages from server, according to the protocol.
+                while (true) {
+                    String line = in.readLine();
+                    System.out.println("Receive response from demo server: " + line);
+                    ObjectMapper mapper = new ObjectMapper();
+                    UIResMessage resmsg = mapper.readValue(line, UIResMessage.class);
+                    UIReqMessage reqmsg = new UIReqMessage();
+                    if ((resmsg.msg_name).equalsIgnoreCase("client connected")) {
+                        System.out.println("Connection to server has been established.");
+
+                        reqmsg.setMsg_name("register profile");
+                        UserProfile profile = new UserProfile();
+                        profile.setProfileName(ownprofileId);
+                        reqmsg.setMsg_params(mapper.writeValueAsString(profile));
+
+                        out.println(mapper.writeValueAsString(reqmsg));
+
+                    } else if ((resmsg.msg_name).equalsIgnoreCase("report position")) {
+                        System.out.println("Receive position report");
+                        PPLI rcvPPLI = mapper.readValue(resmsg.msg_params, PPLI.class);
+
+                        if (!rcvPPLI.getPosName().equalsIgnoreCase(ownprofileId)) {
+                            memberTracks.add(rcvPPLI);
+                            System.out.println("Lat: " + rcvPPLI.getPosLat() + ",Lon: " + rcvPPLI.getPosLon());
+                            if (!checkExistMember(rcvPPLI.getPosId(), rcvPPLI.getPosName())) {
+                                MemberProfile newMember = new MemberProfile();
+                                newMember.setRadioId(rcvPPLI.getPosId());
+                                newMember.setProfileName(rcvPPLI.getPosName());
+                                newMember.setStatus(true);
+                                newMember.setCurrPos(rcvPPLI);
+                                newMember.setUpdateTime(new Date());
+                                members.add(newMember);
+                            } else {
+                                MemberProfile foundMember = findMember(rcvPPLI.getPosId(), rcvPPLI.getPosName());
+                                foundMember.setCurrPos(rcvPPLI);
+                                foundMember.setStatus(true);
+                                foundMember.setUpdateTime(new Date());
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+
+            }
+        }
+    }
 }

@@ -1,7 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * This class handle the radio object
+ * Created by Wichai Pawgasame (ODC3)
+ * Date created: 20/06/2014
+ * Last modified: 20/05/2015
  */
 
 package dti.tdl.communication;

@@ -1,7 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * This class is TDL server handling message queing
+ * Created by Wichai Pawgasame (ODC3)
+ * Date created: 20/06/2014
+ * Last modified: 20/05/2015
  */
 package dti.tdl.core;
 
@@ -29,7 +30,7 @@ public class TDLServer extends Thread {
 
     public TDLServer() throws IOException {
         this.serverSocket = new ServerSocket(9889);
-        //this.serverSocket.setSoTimeout(100);
+        
 
     }
 
@@ -53,15 +54,19 @@ public class TDLServer extends Thread {
                     public void run() {
                         String reqMsg = "";
                         try {
-                            //System.out.println("++++");
                             Socket socket = TDLServer.this.clientSocket;
-                            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                            BufferedReader reader = 
+                                    new BufferedReader(
+                                            new InputStreamReader(
+                                                    socket.getInputStream(), 
+                                                    "UTF-8"));
                             reqMsg = reader.readLine();
                             System.out.println(reqMsg);
                             TDLServer.this.processRequest(reqMsg);
                             System.out.println(TDLServer.this.getReturnMsg());
                             if(!TDLServer.this.isIsSetting()) {
-                            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                            DataOutputStream out = 
+                                new DataOutputStream(socket.getOutputStream());
                             out.writeUTF(TDLServer.this.getReturnMsg());
                             out.close();
                             }
@@ -74,7 +79,8 @@ public class TDLServer extends Thread {
                 thread.start();
             } catch (Exception e) {
                 e.printStackTrace();
-                Logger.getLogger(TDLServer.class.getName()).log(Level.SEVERE, null, e);
+                Logger.getLogger(TDLServer.class.getName())
+                        .log(Level.SEVERE, null, e);
             }
         }
     }

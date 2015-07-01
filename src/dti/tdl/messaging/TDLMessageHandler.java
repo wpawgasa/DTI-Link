@@ -1,7 +1,8 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * This class handle TDL message (Formatting/Deformatting, Framing/Deframing).
+ * Created by Wichai Pawgasame (ODC3)
+ * Date created: 15/06/2014
+ * Last modified: 20/05/2015
  */
 package dti.tdl.messaging;
 
@@ -28,9 +29,12 @@ public class TDLMessageHandler {
 
     public static boolean hasUnfinishedMsg = false;
     public final static LinkedList<String> txStack = new LinkedList<String>();
-    public final static ConcurrentLinkedQueue<TDLMessage> rxStack = new ConcurrentLinkedQueue<TDLMessage>();
-    public final static LinkedList<String> cmdReqStack = new LinkedList<String>();
-    public final static LinkedList<String> cmdResStack = new LinkedList<String>();
+    public final static ConcurrentLinkedQueue<TDLMessage> rxStack = 
+            new ConcurrentLinkedQueue<TDLMessage>();
+    public final static LinkedList<String> cmdReqStack = 
+            new LinkedList<String>();
+    public final static LinkedList<String> cmdResStack = 
+            new LinkedList<String>();
     public static boolean isCmdMode = false;
     public static double messageMaxBytes = 100;
     public static double messageOverheadBytes = 21;
@@ -50,14 +54,7 @@ public class TDLMessageHandler {
                 
             }
             System.out.println(rcvStr);
-//            System.out.println(rxMsgT);
-//            System.out.println(size);
-//        } catch (UnsupportedEncodingException ex) {
-//            Logger.getLogger(TDLMessageHandler.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        for (int k = 0; k < bytes.length; k++) {
-//            System.out.println("Rx frame Byte " + k + ": " + (int) bytes[k]);
-//        }
+
         for (int i = 0; i < size; i++) {
             if (bytes[i] == (byte) 1) {
                 if(startIdx==-1)
@@ -76,59 +73,55 @@ public class TDLMessageHandler {
 
             }
             if (bytes[i] == (byte) 4) {
-                if(endIdx==-1&&i>startIdx&&i>startMsgIdx&&i>endMsgIdx&&bytes[i-1]==(byte)3)
+                if(endIdx==-1&&i>startIdx&&i>startMsgIdx&&
+                        i>endMsgIdx&&bytes[i-1]==(byte)3)
                     endIdx = i;
 
             }
         }
 
-        if (startIdx == -1 || endIdx == -1 || endMsgIdx < startMsgIdx || endIdx < startMsgIdx || endIdx < endMsgIdx || startMsgIdx < startIdx) {
+        if (startIdx == -1 || endIdx == -1 || endMsgIdx < startMsgIdx || 
+                endIdx < startMsgIdx || endIdx < endMsgIdx || 
+                startMsgIdx < startIdx) {
             String err = "Corrupted Message: invalid frame";
-            TDLMessage rxMsg = new TDLMessage(null, null, null, null, (byte) 48, err.getBytes());
-//            rxStack.add(rxMsg);
+            TDLMessage rxMsg = 
+              new TDLMessage(null, null, null, null, (byte) 48, err.getBytes());
+
             rxStack.offer(rxMsg);
             return;
         }
         byte[] msgType = {bytes[startIdx + 1]};
         byte[] fromId = {bytes[startIdx + 2], bytes[startIdx + 3]};
         byte[] toId = {bytes[startIdx + 4], bytes[startIdx + 5]};
-        byte[] profileId = {bytes[startIdx + 6], bytes[startIdx + 7], bytes[startIdx + 8], bytes[startIdx + 9]};
-        //int checksumSize = startMsgIdx - startIdx+9;
+        byte[] profileId = {bytes[startIdx + 6], bytes[startIdx + 7], 
+            bytes[startIdx + 8], bytes[startIdx + 9]};
         byte[] checksum = Arrays.copyOfRange(bytes, startIdx + 10, startIdx + 18);
         byte[] msg = Arrays.copyOfRange(bytes, startMsgIdx + 1, endMsgIdx);
-        //try {
-        //      String rxMsg = new String(msg);
-        //      System.out.println(rxMsg);
-
+        
         long newChecksum = CRC32Checksum(msg);
-//        System.out.println(startIdx);
-//        System.out.println(startMsgIdx);
-//        System.out.println(endIdx);
-//        System.out.println(checksum.length);
-        //long receiveChecksum = ByteUtil.bytesToLong(checksum);
         long receiveChecksum = Longs.fromByteArray(checksum);
-        //System.out.println(checksum.toString());
-        //System.out.println(newChecksum);
-        //System.out.println(receiveChecksum);
+
         String profileStr = new String(profileId);
         String fromStr = "";
         for (int i = 0; i < fromId.length; i++) {
             int fromBI = (int) fromId[i];
-            fromStr = fromStr + String.format("%02x", Byte.parseByte(Integer.toString(fromBI)));
+            fromStr = fromStr + String.format("%02x", 
+                    Byte.parseByte(Integer.toString(fromBI)));
         }
         if (newChecksum != receiveChecksum) {
             String err = "Corrupted Message: checksum not matched";
-            TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, (byte) 48, err.getBytes());
-            //            rxStack.add(rxMsg);
+            TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, 
+                    toId.toString(), null, (byte) 48, err.getBytes());
+            
             rxStack.offer(rxMsgObj);
             return;
         }
         
-        TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, toId.toString(), null, msgType[0], msg);
-        //            rxStack.add(rxMsg);
+        TDLMessage rxMsgObj = new TDLMessage(profileStr, fromStr, 
+                toId.toString(), null, msgType[0], msg);
+        
             rxStack.offer(rxMsgObj);
-//        } catch (UnsupportedEncodingException ex) {
-//        }
+
 
     }
 
@@ -151,9 +144,12 @@ public class TDLMessageHandler {
 
         System.arraycopy(ppliDblBytes, 0, ppliBytes, 0, ppliDblBytes.length);
 
-        System.arraycopy(position.getPosDate().getBytes(), 0, ppliBytes, ppliDblBytes.length, position.getPosDate().getBytes().length);
+        System.arraycopy(position.getPosDate().getBytes(), 0, ppliBytes, 
+                ppliDblBytes.length, position.getPosDate().getBytes().length);
 
-        System.arraycopy(position.getPosTime().getBytes(), 0, ppliBytes, ppliDblBytes.length + position.getPosDate().getBytes().length, position.getPosTime().getBytes().length);
+        System.arraycopy(position.getPosTime().getBytes(), 0, ppliBytes, 
+                ppliDblBytes.length + position.getPosDate().getBytes().length, 
+                position.getPosTime().getBytes().length);
 
         return ppliBytes;
     }
@@ -178,7 +174,8 @@ public class TDLMessageHandler {
         byte[] startMsg = {(byte) 2};
         byte[] endMsg = {(byte) 3};
         byte[] end = {(byte) 4};
-        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); //4 bytes profile id
+        //4 bytes profile id
+        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); 
         byte[] msgType = {message.getMsgType()}; // 1 byte message type
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
@@ -192,7 +189,6 @@ public class TDLMessageHandler {
             }
 
         }
-        //String utf8msg = new String()
         long checksum = CRC32Checksum(data);
 
         byte[] checksumBytes = Longs.toByteArray(checksum);
@@ -208,24 +204,37 @@ public class TDLMessageHandler {
         int msgIdx = 0;
         for (int i = 0; i < numBlk; i++) {
             if (msgLength > TDLMessageHandler.messageMaxBytes) {
-                msgLength = (int) (msgLength - TDLMessageHandler.messageMaxBytes);
+                msgLength = 
+                        (int) (msgLength - TDLMessageHandler.messageMaxBytes);
             }
             int msgBlkLength = (int) TDLMessageHandler.messageMaxBytes;
             if (i == numBlk - 1) {
                 msgBlkLength = msgLength;
             }
             msgIdx = (int) (TDLMessageHandler.messageMaxBytes * i);
-            frame = new byte[start.length + 1 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length + end.length];
+            frame = new byte[start.length + 1 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength + endMsg.length + end.length];
             System.arraycopy(start, 0, frame, 0, 1);
             System.arraycopy(msgType, 0, frame, 1, 1);
             System.arraycopy(from, 0, frame, 2, from.length);
             System.arraycopy(to, 0, frame, 2 + from.length, to.length);
-            System.arraycopy(profile, 0, frame, 2 + from.length + to.length, profile.length);
-            System.arraycopy(checksumBytes, 0, frame, 2 + from.length + to.length + profile.length, checksumBytes.length);
-            System.arraycopy(startMsg, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length, startMsg.length);
-            System.arraycopy(Arrays.copyOfRange(data, msgIdx, msgIdx + msgBlkLength), 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length, msgBlkLength);
-            System.arraycopy(endMsg, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength, endMsg.length);
-            System.arraycopy(end, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length, end.length);
+            System.arraycopy(profile, 0, frame, 2 + from.length + to.length, 
+                    profile.length);
+            System.arraycopy(checksumBytes, 0, frame, 2 + from.length + 
+                    to.length + profile.length, checksumBytes.length);
+            System.arraycopy(startMsg, 0, frame, 2 + from.length + to.length + 
+                    profile.length + checksumBytes.length, startMsg.length);
+            System.arraycopy(
+                    Arrays.copyOfRange(data, msgIdx, msgIdx + msgBlkLength), 0,
+                    frame, 2 + from.length + to.length + profile.length + 
+                            checksumBytes.length + startMsg.length, msgBlkLength);
+            System.arraycopy(endMsg, 0, frame, 2 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength, endMsg.length);
+            System.arraycopy(end, 0, frame, 2 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength + endMsg.length, end.length);
 
             String txMsg = null;
             StringBuilder builder = new StringBuilder();
@@ -241,13 +250,10 @@ public class TDLMessageHandler {
             
             String[] txBytesStrArray = txMsg.split(",");
             byte[] txBytes = new byte[txBytesStrArray.length];
-            //String frameMsg = "Frame content (before): ";
             for (int j = 0; j < txBytesStrArray.length; j++) {
                 int byteInt = Integer.parseInt(txBytesStrArray[j]);
-                //frameMsg = frameMsg+" "+byteInt;
                 txBytes[j] = (byte) byteInt;
             }
-            //System.out.println(frameMsg);
             txStack.add(txMsg);
         }
     }
@@ -257,7 +263,8 @@ public class TDLMessageHandler {
         byte[] startMsg = {(byte) 2};
         byte[] endMsg = {(byte) 3};
         byte[] end = {(byte) 4};
-        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); //4 bytes profile id
+        //4 bytes profile id
+        byte[] profile = message.getProfileId().substring(0, 4).getBytes(); 
         byte[] msgType = {message.getMsgType()}; // 1 byte message type
         byte[] from = hexStringToByteArray(message.getFromId());
         byte[] to = hexStringToByteArray(message.getToId());
@@ -271,7 +278,7 @@ public class TDLMessageHandler {
             }
 
         }
-        //String utf8msg = new String()
+        
         long checksum = CRC32Checksum(data);
 
         byte[] checksumBytes = Longs.toByteArray(checksum);
@@ -281,24 +288,38 @@ public class TDLMessageHandler {
         int msgIdx = 0;
         for (int i = 0; i < numBlk; i++) {
             if (msgLength > TDLMessageHandler.messageMaxBytes) {
-                msgLength = (int) (msgLength - TDLMessageHandler.messageMaxBytes);
+                msgLength = 
+                        (int) (msgLength - TDLMessageHandler.messageMaxBytes);
             }
             int msgBlkLength = (int) TDLMessageHandler.messageMaxBytes;
             if (i == numBlk - 1) {
                 msgBlkLength = msgLength;
             }
             msgIdx = (int) (TDLMessageHandler.messageMaxBytes * i);
-            frame = new byte[start.length + 1 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length + end.length];
+            frame = new byte[start.length + 1 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength + endMsg.length + end.length];
             System.arraycopy(start, 0, frame, 0, 1);
             System.arraycopy(msgType, 0, frame, 1, 1);
             System.arraycopy(from, 0, frame, 2, from.length);
             System.arraycopy(to, 0, frame, 2 + from.length, to.length);
-            System.arraycopy(profile, 0, frame, 2 + from.length + to.length, profile.length);
-            System.arraycopy(checksumBytes, 0, frame, 2 + from.length + to.length + profile.length, checksumBytes.length);
-            System.arraycopy(startMsg, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length, startMsg.length);
-            System.arraycopy(Arrays.copyOfRange(data, msgIdx, msgIdx + msgBlkLength), 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length, msgBlkLength);
-            System.arraycopy(endMsg, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength, endMsg.length);
-            System.arraycopy(end, 0, frame, 2 + from.length + to.length + profile.length + checksumBytes.length + startMsg.length + msgBlkLength + endMsg.length, end.length);
+            System.arraycopy(profile, 0, frame, 2 + from.length + to.length, 
+                    profile.length);
+            System.arraycopy(checksumBytes, 0, frame, 2 + from.length + 
+                    to.length + profile.length, checksumBytes.length);
+            System.arraycopy(startMsg, 0, frame, 2 + from.length + 
+                    to.length + profile.length + checksumBytes.length, 
+                    startMsg.length);
+            System.arraycopy(
+                    Arrays.copyOfRange(data, msgIdx, msgIdx + msgBlkLength), 0, 
+                    frame, 2 + from.length + to.length + profile.length + 
+                    checksumBytes.length + startMsg.length, msgBlkLength);
+            System.arraycopy(endMsg, 0, frame, 2 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength, endMsg.length);
+            System.arraycopy(end, 0, frame, 2 + from.length + to.length + 
+                    profile.length + checksumBytes.length + startMsg.length + 
+                    msgBlkLength + endMsg.length, end.length);
 
             String txMsg = null;
             StringBuilder builder = new StringBuilder();
@@ -406,7 +427,8 @@ public class TDLMessageHandler {
     }
 
     public static double degreeToDecimal(String degreeStr) {
-        String posMinStr = degreeStr.substring(degreeStr.length() - 8, degreeStr.length());
+        String posMinStr = 
+                degreeStr.substring(degreeStr.length() - 8, degreeStr.length());
         String posDegreeStr = degreeStr.substring(0, degreeStr.length() - 8);
         double posMin = Double.parseDouble(posMinStr);
         double posDegree = Double.parseDouble(posDegreeStr);
@@ -441,10 +463,12 @@ public class TDLMessageHandler {
                 j = i * 8;
                 upper = (((inData[j] & 0xff) << 24)
                         + ((inData[j + 1] & 0xff) << 16)
-                        + ((inData[j + 2] & 0xff) << 8) + ((inData[j + 3] & 0xff) << 0));
+                        + ((inData[j + 2] & 0xff) << 8) + 
+                        ((inData[j + 3] & 0xff) << 0));
                 lower = (((inData[j + 4] & 0xff) << 24)
                         + ((inData[j + 5] & 0xff) << 16)
-                        + ((inData[j + 6] & 0xff) << 8) + ((inData[j + 7] & 0xff) << 0));
+                        + ((inData[j + 6] & 0xff) << 8) + 
+                        ((inData[j + 7] & 0xff) << 0));
                 outData[i] = Double.longBitsToDouble((((long) upper) << 32)
                         + (lower & 0xffffffffl));
             }
@@ -453,10 +477,12 @@ public class TDLMessageHandler {
                 j = i * 8;
                 upper = (((inData[j + 7] & 0xff) << 24)
                         + ((inData[j + 6] & 0xff) << 16)
-                        + ((inData[j + 5] & 0xff) << 8) + ((inData[j + 4] & 0xff) << 0));
+                        + ((inData[j + 5] & 0xff) << 8) + 
+                        ((inData[j + 4] & 0xff) << 0));
                 lower = (((inData[j + 3] & 0xff) << 24)
                         + ((inData[j + 2] & 0xff) << 16)
-                        + ((inData[j + 1] & 0xff) << 8) + ((inData[j] & 0xff) << 0));
+                        + ((inData[j + 1] & 0xff) << 8) + 
+                        ((inData[j] & 0xff) << 0));
                 outData[i] = Double.longBitsToDouble((((long) upper) << 32)
                         + (lower & 0xffffffffl));
             }
