@@ -25,6 +25,7 @@ import dti.tdl.messaging.UIResPPLIMessage;
 import dti.tdl.messaging.UIResProfileMessage;
 import dti.tdl.messaging.UIResSetupMessage;
 import dti.tdl.messaging.UIResStatusMessage;
+import dti.tdl.messaging.UIResTacMessage;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import java.io.BufferedReader;
@@ -60,6 +61,7 @@ public class TDLInterface {
     public LinkedList<PPLI> ownTrack = new LinkedList<PPLI>();
     public LinkedList<PPLI> memberTracks = new LinkedList<PPLI>();
     public List<MemberProfile> members = new ArrayList<MemberProfile>();
+    public List<TacMessage> tacMsgs = new ArrayList<TacMessage>();
 
     public String ownRadioId;
     public String ownprofileId;
@@ -71,7 +73,7 @@ public class TDLInterface {
     public SimulateRadioThread simT3;
     public CheckingMemberStatusThread checkStatT;
     public String radioErr;
-    public int posreportRate;
+    public int posreportRate = 5;
     public boolean simNoRadio = false;
     public boolean demo = true;
     public boolean isSetting = false;
@@ -520,8 +522,17 @@ public class TDLInterface {
                                 break;
                             case "send broadcast tac-messages":
                                 TacMessage reqTacMsg = mapper.readValue(msg.msg_params, TacMessage.class);
-                                TDLMessage tacmsg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 50, reqTacMsg.getTac_message().getBytes());
-                                TDLMessageHandler.constructFrame(tacmsg);
+                                if (!demo) {
+                                    TDLMessage tacmsg = new TDLMessage(ownprofileId, ownRadioId, null, null, (byte) 50, reqTacMsg.getTac_message().getBytes());
+                                    TDLMessageHandler.constructFrame(tacmsg);
+                                } else {
+                                    reqTacMsg.setSenderId(ownRadioId);
+                                    reqTacMsg.setSenderName(ownprofileId);
+                                    UIReqMessage reqmsg = new UIReqMessage();
+                                    reqmsg.setMsg_name("transmit message");
+                                    reqmsg.setMsg_params(mapper.writeValueAsString(reqTacMsg));
+                                    demoClient.out.println(mapper.writeValueAsString(reqmsg));
+                                }
                                 UIResMessage resMsg = new UIResMessage();
                                 resMsg.setMsg_name("response transmit message");
                                 resMsg.setMsg_params("success");
@@ -529,6 +540,13 @@ public class TDLInterface {
                             case "send individual text":
                                 break;
                             case "request tac-messages":
+                                UIResTacMessage retMessages = new UIResTacMessage();
+                                retMessages.setMsg_name("response tac-messages");
+                                if (tacMsgs.size() > 0) {
+                                    retMessages.setMessage(tacMsgs);
+                                }
+                                this.setReturnMsg(mapper.writeValueAsString(retMessages));
+
                                 break;
                             case "get individual text":
                                 break;
@@ -1159,6 +1177,12 @@ public class TDLInterface {
                                 foundMember.setUpdateTime(new Date());
                             }
                         }
+                    } else if ((resmsg.msg_name).equalsIgnoreCase("transmit message")) {
+                        System.out.println("Receive message");
+                        TacMessage rcvMsg = mapper.readValue(resmsg.msg_params, TacMessage.class);
+                        
+                        tacMsgs.add(rcvMsg);
+
                     }
                 }
             } catch (Exception e) {

@@ -11,8 +11,10 @@ package dti.tdl.messaging;
  * @author Administrator
  */
 public class TacMessage {
-    private int tac_message_type;
-    private String tac_message;
+    public int tac_message_type;
+    public String tac_message;
+    public String senderId;
+    public String senderName;
 
     public TacMessage() {
     }
@@ -31,6 +33,22 @@ public class TacMessage {
 
     public void setTac_message(String tac_message) {
         this.tac_message = tac_message;
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(String senderId) {
+        this.senderId = senderId;
+    }
+
+    public String getSenderName() {
+        return senderName;
+    }
+
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
     
     
