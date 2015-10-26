@@ -480,8 +480,8 @@ public class TDLInterface {
                                     ownRadioId = "0001";
                                     ppli.setPosId(ownRadioId);
                                     ppli.setPosName(ownprofileId);
-                                    ppli.setPosLat(13.936850);
-                                    ppli.setPosLon(100.549467);
+                                    ppli.setPosLat(13.910331);
+                                    ppli.setPosLon(100.550050);
                                     ownTrack.add(ppli);
                                     reportT = new TDLInterface.PositionReportThread();
                                     reportT.start();
